@@ -11,6 +11,7 @@ import {
   LightbulbIcon,
   SparklesIcon,
   FlameIcon,
+  GitBranchIcon,
   FileSpreadsheetIcon,
   AlertTriangleIcon,
   PlugIcon,
@@ -100,6 +101,10 @@ export function CommandPalette({
           <CommandItem onSelect={() => runCommand(() => onSelectTab("recommendations"))}>
             <SparklesIcon className="mr-2 h-4 w-4 text-muted-foreground" />
             <span>Go to Recommendations</span>
+          </CommandItem>
+          <CommandItem onSelect={() => runCommand(() => onSelectTab("deployments"))}>
+            <GitBranchIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+            <span>Go to Deployments</span>
           </CommandItem>
           <CommandItem onSelect={() => runCommand(() => onSelectTab("benchmarks"))}>
             <FlameIcon className="mr-2 h-4 w-4 text-muted-foreground" />

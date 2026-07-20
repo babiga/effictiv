@@ -4,88 +4,86 @@
 
 # ⚡ Effictiv
 
-> **Open-source Software Energy Intelligence Platform**
+> **Open-source Software Energy Intelligence Platform for Green Software**
 
-Effictiv helps engineering teams measure, analyze, and optimize the energy consumption, cloud costs, and carbon footprint of their software.
+Effictiv helps engineering teams measure, understand, and reduce the **energy consumption** and **carbon footprint** of their software.
 
-Instead of only monitoring CPU and memory, Effictiv answers the questions that matter:
+As software continues to power more of the world's infrastructure, improving software efficiency has become an important sustainability challenge. Effictiv brings together energy measurement, sustainability analytics, and AI-powered insights into a single developer-friendly platform.
 
-- 💰 How much does our software actually cost to run?
-- ⚡ Which service consumes the most energy?
-- 🌱 What is our carbon footprint?
-- 📈 Which deployment increased energy usage?
-- 🤖 What should we optimize first?
+Our mission is simple:
+
+> **Build software that consumes less energy and has a smaller environmental impact.**
 
 ---
 
-## ✨ Vision
+# 🌍 Why Effictiv?
 
-Software is becoming one of the world's largest energy consumers, yet most engineering teams have little visibility into how efficiently their applications use energy.
+Modern observability platforms tell us about performance, reliability, and availability—but very few help developers understand the environmental impact of their software.
 
-Effictiv aims to become the **software sustainability platform** for modern engineering teams by combining:
+Effictiv aims to fill that gap by making software energy consumption visible, measurable, and actionable.
 
-- Energy measurement
-- Carbon accounting
-- Cloud cost analysis
-- AI-powered optimization
-- Developer-friendly analytics
+Whether you're building a small application or operating large-scale cloud infrastructure, Effictiv helps you answer questions like:
 
-Our goal is simple:
-
-> **Help developers build faster, greener, and more efficient software.**
+- ⚡ Which services consume the most energy?
+- 🌱 What is our software's carbon footprint?
+- 📈 Which deployment increased energy consumption?
+- 🔍 Where can we improve energy efficiency?
+- 🤖 What changes will have the biggest sustainability impact?
 
 ---
 
-# 🚀 Features
+# ✨ Features
 
-## Dashboard
+## 📊 Energy Intelligence Dashboard
 
-- Modern SaaS dashboard
-- Energy usage overview
-- Carbon footprint
-- Efficiency score
-- Estimated energy cost
-- Potential savings
-- Active alerts
+- Real-time energy usage monitoring
+- Carbon footprint analytics
+- Energy efficiency score
+- Historical energy trends
+- Energy hotspots
+- Sustainability overview
 
-## Analytics
+## 🔬 Software Analytics
 
-- Energy trends
-- Cost trends
-- Carbon trends
-- Resource breakdown
-- Top energy-consuming services
-- Historical measurements
+Analyze energy consumption across:
 
-## AI Insights
+- Applications
+- Microservices
+- APIs
+- Containers
+- Kubernetes workloads
+- Infrastructure
+- Deployments
+- Git repositories
 
-Automatically identify:
+## 🤖 AI Sustainability Insights
+
+Automatically detect:
 
 - Energy regressions
-- Expensive deployments
-- Inefficient services
+- Inefficient workloads
+- High-energy services
 - Resource hotspots
-- Optimization opportunities
+- Sustainability opportunities
 
-## Recommendations
+Receive clear explanations of what changed and why.
 
-Receive actionable recommendations such as:
+## 💡 Optimization Recommendations
 
-- Enable compression
-- Optimize database queries
-- Reduce idle resources
-- Scale workloads more efficiently
-- Schedule workloads during low-carbon periods
+Get actionable recommendations to improve software efficiency.
 
-Each recommendation estimates:
+Examples include:
 
-- Energy savings
-- Cost savings
-- Carbon reduction
-- Implementation difficulty
-- ROI
+- Reduce unnecessary compute
+- Optimize resource allocation
+- Remove idle workloads
+- Improve application efficiency
+- Schedule workloads during lower-carbon periods
+- Adopt greener deployment strategies
 
-## Benchmarks
+Each recommendation includes an estimated impact on energy consumption and carbon emissions.
+
+## 📈 Benchmarking
 
 Compare:
 
@@ -93,24 +91,26 @@ Compare:
 - Releases
 - Branches
 - Commits
+- Applications
 - Services
 
-Track improvements over time.
+Track energy efficiency improvements over time.
 
-## Reports
+## 📄 Sustainability Reports
 
-Generate:
+Generate reports for:
 
-- Engineering reports
-- Executive summaries
-- Carbon reports
-- Sustainability reports
+- Engineering teams
+- Sustainability initiatives
+- ESG reporting
+- Research
+- Historical analysis
 
 ---
 
-# 🛠 Planned Integrations
+# 🔌 Planned Integrations
 
-## Measurement
+## Green Software
 
 - Kepler
 - Scaphandre
@@ -140,90 +140,91 @@ Generate:
 
 ---
 
-# 🏗 Tech Stack
+# 🛠 Tech Stack
 
-- **Next.js 16**
-- **React 19**
-- **TypeScript**
-- **Tailwind CSS v4**
-- **shadcn/ui**
-- **Recharts**
-- **Framer Motion**
-- **Lucide React**
+- Next.js
+- React
+- TypeScript
+- Tailwind CSS
+- shadcn/ui
+- Recharts
+- Framer Motion
+- Lucide React
 
 ---
 
-# 📦 Roadmap
+# 🗺 Roadmap
 
 ## Phase 1
 
-- [x] Dashboard boilerplate
-- [ ] Responsive layout
-- [ ] Mock analytics
-- [ ] Charts
-- [ ] Component library
+- Dashboard UI
+- Component library
+- Mock analytics
+- Responsive layout
 
 ## Phase 2
 
-- [ ] Authentication
-- [ ] Projects
-- [ ] Measurements
-- [ ] Reports
-- [ ] Team management
+- Authentication
+- Projects
+- Measurements
+- Reports
+- Team management
 
 ## Phase 3
 
-- [ ] GitHub integration
-- [ ] Scaphandre integration
-- [ ] Kepler integration
-- [ ] CodeCarbon integration
-- [ ] OpenTelemetry support
+- GitHub integration
+- Kepler integration
+- Scaphandre integration
+- CodeCarbon integration
+- OpenTelemetry integration
 
 ## Phase 4
 
-- [ ] AI insights
-- [ ] AI recommendations
-- [ ] Carbon-aware scheduling
-- [ ] Deployment impact analysis
+- AI sustainability insights
+- AI optimization recommendations
+- Carbon-aware scheduling
+- Deployment impact analysis
+- Green Software score
 
 ---
 
 # 🤝 Contributing
 
-Contributions are welcome.
+We welcome contributions from developers, researchers, designers, sustainability advocates, and anyone interested in Green Software.
 
-Whether you're interested in:
+Areas where you can contribute:
 
-- Frontend development
-- Backend development
-- Sustainability engineering
-- Green software
-- UX/UI design
+- Frontend
+- Backend
+- Green Software tooling
+- Sustainability research
 - Documentation
 - DevOps
 - Testing
-
-your help is appreciated.
+- UX/UI
 
 Please feel free to open an issue, start a discussion, or submit a pull request.
 
 ---
 
-# 🌍 Why Open Source?
+# 🌱 Why Open Source?
 
-Software sustainability should not be limited to large enterprises.
+The environmental impact of software affects everyone.
 
-By building Effictiv in the open, we hope to create a community-driven platform that helps every engineering team understand and reduce the environmental impact of their software.
+We believe the tools needed to measure and improve software sustainability should be open, transparent, and accessible to the entire developer community.
+
+By building Effictiv as an open-source project, we hope to foster collaboration between software engineers, researchers, cloud providers, and the Green Software community to create a more sustainable digital future.
 
 ---
 
-# 📖 Inspiration
+# ❤️ Inspiration
 
-Effictiv is inspired by the Green Software movement and many outstanding open-source projects, including:
+Effictiv is inspired by the work of the Green Software community and projects such as:
 
-- Green Metrics Tool
+- Green Software Foundation
 - Kepler
 - Scaphandre
+- Green Metrics Tool
 - CodeCarbon
 - CO2.js
 - OpenTelemetry
@@ -234,24 +235,25 @@ Effictiv is inspired by the Green Software movement and many outstanding open-so
 
 # ⭐ Support the Project
 
-If you find this project interesting:
+If you believe software should be more energy-efficient and sustainable:
 
 - ⭐ Star the repository
 - 🐛 Report bugs
-- 💡 Suggest new features
+- 💡 Suggest ideas
 - 🤝 Contribute code
-- 📢 Share the project with others
+- 📢 Share the project
+- 🌱 Help grow the Green Software ecosystem
 
-Every contribution helps make software more sustainable.
+Every contribution helps move software toward a more sustainable future.
 
 ---
 
 ## License
 
-This project is licensed under the **MIT License**.
+Released under the **MIT License**.
 
 ---
 
 <p align="center">
-Built with ❤️ for a more sustainable software ecosystem.
+Building the future of Green Software, one commit at a time. 🌍💚
 </p>

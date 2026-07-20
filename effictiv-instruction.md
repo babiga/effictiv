@@ -1,171 +1,371 @@
-# Effictiv --- AI Agent Implementation Specification (v1)
+# Context
 
-## 1. Product Vision
+We are building an open-source project called **Effictiv**.
 
-**Effictiv** is a Software Energy Intelligence Platform that helps
-engineering teams understand, optimize, and reduce the energy
-consumption, cloud costs, and carbon footprint of their software.
+Effictiv is NOT a cloud cost optimization platform.
 
-Instead of only showing CPU, RAM, or power usage, Effictiv answers:
+Effictiv is a **Software Energy Intelligence Platform** whose mission is to help developers build more energy-efficient, sustainable software and reduce the environmental impact of computing.
 
-- Where is our energy going?
-- Which deployment increased energy consumption?
-- Which service wastes the most energy?
-- How much money can we save?
-- What should we optimize first?
-- How sustainable is our software?
+The dashboard should communicate sustainability, software efficiency, environmental impact, and engineering insights—not finance.
 
-Target users: - Software Engineers - DevOps Engineers - SRE -
-Engineering Managers - CTO - Sustainability/ESG teams
+Think of the product as:
 
-## 2. Design Philosophy
+- Vercel
+- Linear
+- Datadog
+- GitHub
+- Green Software Foundation
 
-- Inspired by Vercel, Linear, Datadog, Stripe Dashboard, and Grafana.
-- Clean, spacious, card-based UI.
-- Dark mode first.
-- Modern charts with minimal colors.
-- Strong information hierarchy.
+combined into one modern dashboard.
 
-## 3. Sidebar
+The UI should feel minimal, premium, spacious, and data-focused.
 
-- Dashboard
-- Applications
-- Infrastructure
-- Measurements
-- Analytics
-- Insights
-- Recommendations
-- Benchmarks
-- Reports
-- Alerts
-- Integrations
-- Team
-- Settings
+Use:
 
-## 4. Dashboard
+- Next.js 16 App Router
+- TypeScript
+- Tailwind CSS v4
+- shadcn/ui
+- Recharts
+- Framer Motion
+- Lucide React
 
-### Global Filters
+Use mock data only.
 
-- Workspace
-- Date Range
-- Environment
-- Refresh
-- Search
+Do NOT implement backend.
 
-### KPI Cards
+---
 
-- Energy Usage
-- Estimated Energy Cost
-- Carbon Emissions
+# Dashboard Philosophy
+
+Every page should answer one of these questions:
+
+1. How energy-efficient is our software?
+2. Where is software wasting energy?
+3. What can engineers improve?
+4. Has our software become more sustainable over time?
+5. Which deployment or commit affected energy consumption?
+
+Avoid making money the primary metric.
+
+Cost may exist as optional metadata, but energy and sustainability should always be the primary focus.
+
+---
+
+# Replace Business Metrics
+
+Remove emphasis on:
+
+- Revenue
+- Profit
+- ROI
+- Cloud Spending
+- Financial KPIs
+
+Instead prioritize:
+
+- Energy (Wh / kWh)
+- Carbon Emissions (gCO₂e / kgCO₂e)
 - Efficiency Score
-- Potential Savings
+- Energy per Request
+- Energy per API Call
+- Energy per Build
+- Energy per Deployment
+- Sustainability Trend
+- Carbon Reduction
+- Green Score
+- Energy Hotspots
+
+---
+
+# Dashboard Sections
+
+## KPI Cards
+
+Show:
+
+- Total Energy Usage
+- Carbon Emissions
+- Green Score
+- Energy Efficiency
 - Active Applications
+- Measurements Today
+- Sustainability Improvements
 - Active Alerts
 
-### Charts
+---
 
-- Energy Trend
-- Top Energy Consumers
-- Resource Distribution
-- Efficiency Trend
+## Main Charts
 
-### Intelligence
+Create charts for:
 
-- Energy Hotspots
-- AI Recommendations
-- Recent Alerts
+Energy Usage Trend
 
-### Recent Measurements
+Carbon Emissions Trend
 
-- Run history table
+Energy by Application
 
-## 5. Modules
+Energy by Infrastructure
 
-### Applications
+Energy by Programming Language
 
-Overview, deployments, endpoints, recommendations, comparisons.
+Energy by Deployment
 
-### Infrastructure
+Green Score Trend
 
-AWS, Azure, GCP, Kubernetes, Docker, Servers, VMs.
+Resource Energy Distribution
 
-### Measurements
+---
 
-Energy, CPU, Memory, Carbon, Machine, Duration.
+## Hotspots
 
-### Analytics
+Table showing:
 
-Energy, Carbon, Cost, Efficiency, Repositories, Services.
+Application
 
-### Insights
+Endpoint
 
-AI-powered root cause analysis.
+Energy
 
-### Recommendations
+Carbon
 
-Optimization suggestions with ROI and estimated savings.
+Trend
 
-### Benchmarks
+Severity
 
-Compare versions, commits, deployments, branches.
+---
 
-### Reports
+## Sustainability Insights
 
-Weekly, Monthly, Executive, Engineering, Carbon.
+Instead of generic analytics, create AI insight cards such as:
 
-### Alerts
+"Image Processing Service consumes 27% more energy after the latest deployment."
 
-Energy, Carbon, Cost, CPU, Memory, Deployment regressions.
+"Idle Kubernetes nodes are responsible for unnecessary energy usage."
 
-### Integrations
+"API caching reduced energy consumption by 14%."
 
-GitHub, GitLab, Docker, Kubernetes, Prometheus, Grafana, Scaphandre,
-Kepler, CodeCarbon, CO2.js, OpenTelemetry, AWS, Azure, GCP, Vercel.
+Each insight includes:
 
-## 6. Components
+- explanation
+- confidence
+- affected services
+- environmental impact
 
-### Layout
+---
 
-- Sidebar
-- Header
-- Breadcrumb
-- Theme Toggle
-- Command Palette
+## AI Recommendations
 
-### Cards
+Focus on sustainability recommendations.
 
-- KPI Card
-- Insight Card
-- Recommendation Card
-- Alert Card
+Examples:
 
-### Charts
+Enable image optimization.
 
-- Line
-- Area
-- Bar
-- Donut
+Reduce unnecessary polling.
 
-### Data
+Move scheduled jobs to low-carbon periods.
 
-- Tables
-- Pagination
-- Skeletons
-- Empty States
+Optimize database queries.
 
-## 7. Mock Models
+Reduce idle containers.
 
-```ts
-Application;
-Measurement;
-Recommendation;
-Alert;
-Insight;
-```
+Enable autoscaling.
 
-## 8. Boilerplate Scope
+Replace inefficient algorithms.
 
-- Responsive dashboard
-- Mock data only
-- Reusable components
-- Production-ready architecture
+Each recommendation includes:
+
+Estimated Energy Reduction
+
+Estimated Carbon Reduction
+
+Difficulty
+
+Priority
+
+Expected Impact
+
+---
+
+## Benchmarks
+
+Allow comparison between:
+
+Commits
+
+Deployments
+
+Versions
+
+Branches
+
+Applications
+
+Compare:
+
+Energy
+
+Carbon
+
+Efficiency
+
+CPU
+
+Memory
+
+Latency
+
+Show improvements and regressions.
+
+---
+
+## Reports
+
+Generate mock reports for:
+
+Weekly Sustainability Report
+
+Carbon Report
+
+Engineering Report
+
+Green Score Report
+
+Project Sustainability Timeline
+
+---
+
+## Sidebar
+
+Dashboard
+
+Applications
+
+Measurements
+
+Analytics
+
+Insights
+
+Recommendations
+
+Benchmarks
+
+Reports
+
+Alerts
+
+Integrations
+
+Team
+
+Settings
+
+---
+
+# Design Language
+
+Everything should communicate:
+
+Energy
+
+Sustainability
+
+Efficiency
+
+Engineering
+
+Observability
+
+Do NOT use obvious "eco" clichés everywhere.
+
+Avoid excessive leaves, trees, or bright green gradients.
+
+Use a professional SaaS aesthetic similar to Vercel or Linear.
+
+Primary accent should be emerald/green used sparingly to indicate positive sustainability improvements.
+
+Use neutral grays with excellent spacing.
+
+---
+
+# Empty States
+
+Every page should have polished empty states.
+
+Examples:
+
+"No measurements collected yet."
+
+"Connect Scaphandre to begin measuring server energy."
+
+"Connect GitHub to analyze deployment impact."
+
+---
+
+# Mock Data
+
+Create realistic TypeScript mock data for:
+
+Applications
+
+Measurements
+
+Energy Profiles
+
+Recommendations
+
+Insights
+
+Alerts
+
+Reports
+
+Benchmarks
+
+Deployments
+
+Repositories
+
+---
+
+# Component Requirements
+
+Build reusable components for:
+
+Energy KPI Card
+
+Green Score Card
+
+Carbon Card
+
+Insight Card
+
+Recommendation Card
+
+Hotspot Table
+
+Measurement Timeline
+
+Deployment Timeline
+
+Application Card
+
+Energy Trend Chart
+
+Carbon Trend Chart
+
+Green Score Chart
+
+Energy Breakdown Chart
+
+---
+
+# Final Goal
+
+The final result should feel like a modern, production-ready open-source Green Software platform.
+
+When someone opens the dashboard, they should immediately understand that Effictiv exists to help engineers build software that consumes less energy and reduces environmental impact—not simply to reduce cloud costs.
+
+Prioritize excellent UX, reusable architecture, accessibility, responsive layouts, clean code organization, and beautiful visual hierarchy.

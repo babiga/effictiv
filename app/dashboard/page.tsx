@@ -6,23 +6,18 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import { CommandPalette } from "@/components/command-palette"
 
-// Import modules
 import { DashboardModule } from "@/components/dashboard-module"
 import { ApplicationsModule } from "@/components/applications-module"
 import { InfrastructureModule } from "@/components/infrastructure-module"
 import { MeasurementsModule } from "@/components/measurements-module"
 import { RecommendationsModule } from "@/components/recommendations-module"
 import { AlertsModule } from "@/components/alerts-module"
-
-import {
-  AnalyticsModule,
-  InsightsModule,
-  BenchmarksModule,
-  ReportsModule,
-  IntegrationsModule,
-  TeamModule,
-  SettingsModule,
-} from "@/components/other-modules"
+import { AnalyticsModule } from "@/components/analytics-module"
+import { InsightsModule } from "@/components/insights-module"
+import { BenchmarksModule } from "@/components/benchmarks-module"
+import { ReportsModule } from "@/components/reports-module"
+import { DeploymentsModule } from "@/components/deployments-module"
+import { IntegrationsModule, TeamModule, SettingsModule } from "@/components/other-modules"
 
 export default function Page() {
   const [activeTab, setActiveTab] = React.useState("dashboard")
@@ -31,7 +26,6 @@ export default function Page() {
   const [searchQuery, setSearchQuery] = React.useState("")
   const [commandPaletteOpen, setCommandPaletteOpen] = React.useState(false)
 
-  // Tracking applied recommendations to calculate cost/carbon KPI changes in realtime
   const [appliedCount, setAppliedCount] = React.useState(0)
   const [dismissedIds, setDismissedIds] = React.useState<string[]>([])
 
@@ -47,7 +41,6 @@ export default function Page() {
     setSearchQuery(appName)
   }
 
-  // Render the selected module component
   const renderModuleContent = () => {
     switch (activeTab) {
       case "dashboard":
@@ -58,7 +51,7 @@ export default function Page() {
             appliedCount={appliedCount}
             onNavigate={(tab) => {
               setActiveTab(tab)
-              setSearchQuery("") // Clear search on navigation
+              setSearchQuery("")
             }}
           />
         )
@@ -80,6 +73,8 @@ export default function Page() {
         return <AnalyticsModule />
       case "insights":
         return <InsightsModule />
+      case "deployments":
+        return <DeploymentsModule />
       case "benchmarks":
         return <BenchmarksModule />
       case "recommendations":
@@ -118,15 +113,12 @@ export default function Page() {
         } as React.CSSProperties
       }
     >
-      {/* Sidebar Navigation */}
       <AppSidebar activeTab={activeTab} onSelectTab={(tab) => {
         setActiveTab(tab)
-        setSearchQuery("") // Reset search
+        setSearchQuery("")
       }} />
 
-      {/* Main Content Area */}
       <SidebarInset className="bg-background flex flex-1 flex-col">
-        {/* Top Header controls */}
         <SiteHeader
           activeTab={activeTab}
           onSearchClick={() => setCommandPaletteOpen(true)}
@@ -136,13 +128,11 @@ export default function Page() {
           onTimeRangeChange={setTimeRange}
         />
 
-        {/* Dynamic page content */}
         <main className="flex flex-1 flex-col overflow-y-auto">
           {renderModuleContent()}
         </main>
       </SidebarInset>
 
-      {/* Command Palette Modal */}
       <CommandPalette
         open={commandPaletteOpen}
         onOpenChange={setCommandPaletteOpen}

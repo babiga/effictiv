@@ -24,7 +24,7 @@ export interface Measurement {
   energyWh: number;
   cpuPercent: number;
   memoryMB: number;
-  carbonIntensity: number; // g CO2e / kWh
+  carbonIntensity: number;
   machineType: string;
   cost: number;
   durationMs: number;
@@ -38,9 +38,9 @@ export interface Recommendation {
   application: string;
   effort: "Low" | "Medium" | "High";
   impact: "Low" | "Medium" | "High";
-  estimatedSavingsCost: number; // Monthly USD
-  estimatedSavingskWh: number; // Monthly kWh
-  estimatedSavingsCarbon: number; // Monthly grams
+  estimatedSavingsCost: number;
+  estimatedSavingskWh: number;
+  estimatedSavingsCarbon: number;
   status: "Active" | "Applied" | "Dismissed";
 }
 
@@ -64,9 +64,101 @@ export interface Insight {
   timestamp: string;
   application: string;
   severity: "High" | "Medium" | "Low";
+  confidence: number;
+  affectedServices: string[];
+  environmentalImpact: {
+    energySavedWh: number;
+    carbonSavedGrams: number;
+    treesEquivalent: number;
+  };
 }
 
-// Generate Mock Data
+export interface Deployment {
+  id: string;
+  version: string;
+  commitSha: string;
+  application: string;
+  timestamp: string;
+  energyBefore: number;
+  energyAfter: number;
+  carbonBefore: number;
+  carbonAfter: number;
+  efficiencyBefore: number;
+  efficiencyAfter: number;
+  cpuBefore: number;
+  cpuAfter: number;
+  memoryBefore: number;
+  memoryAfter: number;
+  status: "improved" | "regression" | "neutral";
+  author: string;
+}
+
+export interface Benchmark {
+  id: string;
+  name: string;
+  type: "commit" | "deployment" | "version" | "branch";
+  application: string;
+  timestamp: string;
+  metrics: {
+    energy: number;
+    carbon: number;
+    efficiency: number;
+    cpu: number;
+    memory: number;
+    latency: number;
+  };
+  baselineMetrics?: {
+    energy: number;
+    carbon: number;
+    efficiency: number;
+    cpu: number;
+    memory: number;
+    latency: number;
+  };
+  verdict: "improved" | "regression" | "neutral";
+}
+
+export interface Hotspot {
+  id: string;
+  application: string;
+  endpoint: string;
+  energyWh: number;
+  carbonGrams: number;
+  trend: "improving" | "stable" | "regressing";
+  severity: "critical" | "warning" | "info";
+}
+
+export interface GreenScore {
+  id: string;
+  date: string;
+  score: number;
+  energy: number;
+  carbon: number;
+  efficiency: number;
+}
+
+export interface Report {
+  id: string;
+  title: string;
+  type: "weekly" | "carbon" | "engineering" | "green-score" | "timeline";
+  date: string;
+  summary: string;
+  metrics: {
+    energySaved?: number;
+    carbonAvoided?: number;
+    treesEquivalent?: number;
+    efficiencyGain?: number;
+    measurementsCount?: number;
+  };
+}
+
+const baseDate = new Date();
+const subtractDays = (days: number) => {
+  const d = new Date(baseDate);
+  d.setDate(d.getDate() - days);
+  return d.toISOString();
+};
+
 export const mockApplications: Application[] = [
   {
     id: "app-1",
@@ -189,14 +281,6 @@ export const mockApplications: Application[] = [
   },
 ];
 
-// Reconstruct dates relative to now for measurements
-const baseDate = new Date();
-const subtractDays = (days: number) => {
-  const d = new Date(baseDate);
-  d.setDate(d.getDate() - days);
-  return d.toISOString();
-};
-
 export const mockMeasurements: Measurement[] = [
   {
     id: "m-1",
@@ -258,7 +342,7 @@ export const mockMeasurements: Measurement[] = [
     energyWh: 8,
     cpuPercent: 5.6,
     memoryMB: 128,
-    carbonIntensity: 220, // clean grid energy!
+    carbonIntensity: 220,
     machineType: "t3.small",
     cost: 0.0012,
     durationMs: 8000,
@@ -357,6 +441,32 @@ export const mockRecommendations: Recommendation[] = [
     estimatedSavingsCarbon: 114000,
     status: "Active",
   },
+  {
+    id: "rec-5",
+    category: "Code",
+    title: "Replace inefficient image decoding algorithm",
+    description: "image-processor uses a legacy JPEG decoder that consumes 3x more CPU cycles than modern alternatives. Switching to libvips or mozjpeg will reduce energy per thumbnail by 60%.",
+    application: "image-processor",
+    effort: "Medium",
+    impact: "Medium",
+    estimatedSavingsCost: 8.50,
+    estimatedSavingskWh: 56,
+    estimatedSavingsCarbon: 21280,
+    status: "Active",
+  },
+  {
+    id: "rec-6",
+    category: "Infrastructure",
+    title: "Reduce idle container replicas in notification-dispatcher",
+    description: "notification-dispatcher maintains 8 replicas during off-peak hours (10 PM - 6 AM) but traffic drops to 2% capacity. Enabling HPA with minimum 2 replicas saves 75% of nighttime energy.",
+    application: "notification-dispatcher",
+    effort: "Low",
+    impact: "Low",
+    estimatedSavingsCost: 3.20,
+    estimatedSavingskWh: 21,
+    estimatedSavingsCarbon: 7980,
+    status: "Active",
+  },
 ];
 
 export const mockAlerts: Alert[] = [
@@ -404,6 +514,13 @@ export const mockInsights: Insight[] = [
     timestamp: subtractDays(1),
     application: "payment-gateway",
     severity: "High",
+    confidence: 94,
+    affectedServices: ["stripe-charge", "checkout-api"],
+    environmentalImpact: {
+      energySavedWh: 0,
+      carbonSavedGrams: 0,
+      treesEquivalent: 0,
+    },
   },
   {
     id: "insight-2",
@@ -413,6 +530,13 @@ export const mockInsights: Insight[] = [
     timestamp: subtractDays(3),
     application: "auth-service",
     severity: "Medium",
+    confidence: 88,
+    affectedServices: ["token-sign", "validate-session"],
+    environmentalImpact: {
+      energySavedWh: 14500,
+      carbonSavedGrams: 5510,
+      treesEquivalent: 0.25,
+    },
   },
   {
     id: "insight-3",
@@ -422,10 +546,497 @@ export const mockInsights: Insight[] = [
     timestamp: subtractDays(5),
     application: "data-pipeline",
     severity: "High",
+    confidence: 91,
+    affectedServices: ["etl-batch", "aggregate-db"],
+    environmentalImpact: {
+      energySavedWh: 75600,
+      carbonSavedGrams: 28728,
+      treesEquivalent: 1.31,
+    },
+  },
+  {
+    id: "insight-4",
+    type: "Regression",
+    title: "Memory leak in recommendation-engine increasing energy draw",
+    description: "Over the past 7 days, RSS memory has grown from 1.2GB to 3.8GB without corresponding traffic increase. The garbage collector is running 4x more frequently, consuming extra CPU cycles.",
+    timestamp: subtractDays(2),
+    application: "recommendation-engine",
+    severity: "High",
+    confidence: 87,
+    affectedServices: ["train-model", "inference-api"],
+    environmentalImpact: {
+      energySavedWh: 0,
+      carbonSavedGrams: 0,
+      treesEquivalent: 0,
+    },
+  },
+  {
+    id: "insight-5",
+    type: "Optimization",
+    title: "Image compression pipeline now 40% more energy efficient",
+    description: "After migrating to WebP-native encoding, image-processor reduced per-thumbnail energy from 0.8Wh to 0.48Wh. At 50,000 thumbnails/day, this saves 16 kWh daily.",
+    timestamp: subtractDays(4),
+    application: "image-processor",
+    severity: "Low",
+    confidence: 96,
+    affectedServices: ["thumbnail-gen", "image-crop"],
+    environmentalImpact: {
+      energySavedWh: 16000,
+      carbonSavedGrams: 6080,
+      treesEquivalent: 0.28,
+    },
+  },
+  {
+    id: "insight-6",
+    type: "Hotspot",
+    title: "search-indexer reindex job consumes 62% of cluster energy",
+    description: "The nightly reindex-all job runs on oversized c5.4xlarge instances at 91% CPU for 2 hours. Profiling shows 35% of time spent on redundant field re-analysis that could be cached.",
+    timestamp: subtractDays(1),
+    application: "search-indexer",
+    severity: "Medium",
+    confidence: 82,
+    affectedServices: ["reindex-all", "search-query"],
+    environmentalImpact: {
+      energySavedWh: 3115,
+      carbonSavedGrams: 1184,
+      treesEquivalent: 0.05,
+    },
   },
 ];
 
-// Helper to filter items based on workspace, environment, or search query
+export const mockDeployments: Deployment[] = [
+  {
+    id: "dep-1",
+    version: "v2.4.1",
+    commitSha: "a3f8c12",
+    application: "payment-gateway",
+    timestamp: subtractDays(1),
+    energyBefore: 42,
+    energyAfter: 78,
+    carbonBefore: 15.96,
+    carbonAfter: 29.64,
+    efficiencyBefore: 88,
+    efficiencyAfter: 72,
+    cpuBefore: 18,
+    cpuAfter: 34,
+    memoryBefore: 480,
+    memoryAfter: 512,
+    status: "regression",
+    author: "Sarah Chen",
+  },
+  {
+    id: "dep-2",
+    version: "v3.1.0",
+    commitSha: "b7d2e45",
+    application: "auth-service",
+    timestamp: subtractDays(2),
+    energyBefore: 14,
+    energyAfter: 11,
+    carbonBefore: 5.32,
+    carbonAfter: 4.18,
+    efficiencyBefore: 85,
+    efficiencyAfter: 92,
+    cpuBefore: 15,
+    cpuAfter: 12,
+    memoryBefore: 260,
+    memoryAfter: 248,
+    status: "improved",
+    author: "Marcus Brody",
+  },
+  {
+    id: "dep-3",
+    version: "v1.8.3",
+    commitSha: "c9a1f78",
+    application: "data-pipeline",
+    timestamp: subtractDays(3),
+    energyBefore: 4400,
+    energyAfter: 4520,
+    carbonBefore: 1672,
+    carbonAfter: 1717.6,
+    efficiencyBefore: 64,
+    efficiencyAfter: 62,
+    cpuBefore: 80,
+    cpuAfter: 82,
+    memoryBefore: 3900,
+    memoryAfter: 4096,
+    status: "regression",
+    author: "Emily Watson",
+  },
+  {
+    id: "dep-4",
+    version: "v2.0.0",
+    commitSha: "d4e5b23",
+    application: "image-processor",
+    timestamp: subtractDays(4),
+    energyBefore: 10,
+    energyAfter: 8,
+    carbonBefore: 3.8,
+    carbonAfter: 1.76,
+    efficiencyBefore: 90,
+    efficiencyAfter: 95,
+    cpuBefore: 7,
+    cpuAfter: 5.6,
+    memoryBefore: 140,
+    memoryAfter: 128,
+    status: "improved",
+    author: "Khangal Hugo",
+  },
+  {
+    id: "dep-5",
+    version: "v4.2.0",
+    commitSha: "e8f3a91",
+    application: "search-indexer",
+    timestamp: subtractDays(5),
+    energyBefore: 8700,
+    energyAfter: 8900,
+    carbonBefore: 3296,
+    carbonAfter: 3372,
+    efficiencyBefore: 58,
+    efficiencyAfter: 56,
+    cpuBefore: 89,
+    cpuAfter: 91,
+    memoryBefore: 7800,
+    memoryAfter: 8192,
+    status: "regression",
+    author: "Sarah Chen",
+  },
+  {
+    id: "dep-6",
+    version: "v1.5.0",
+    commitSha: "f2c7d56",
+    application: "notification-dispatcher",
+    timestamp: subtractDays(6),
+    energyBefore: 15,
+    energyAfter: 14,
+    carbonBefore: 5.7,
+    carbonAfter: 5.32,
+    efficiencyBefore: 82,
+    efficiencyAfter: 84,
+    cpuBefore: 5,
+    cpuAfter: 4.2,
+    memoryBefore: 200,
+    memoryAfter: 192,
+    status: "improved",
+    author: "Marcus Brody",
+  },
+  {
+    id: "dep-7",
+    version: "v3.0.1",
+    commitSha: "g1h4i78",
+    application: "recommendation-engine",
+    timestamp: subtractDays(7),
+    energyBefore: 3100,
+    energyAfter: 3200,
+    carbonBefore: 1178,
+    carbonAfter: 1216,
+    efficiencyBefore: 68,
+    efficiencyAfter: 65,
+    cpuBefore: 62,
+    cpuAfter: 65,
+    memoryBefore: 1900,
+    memoryAfter: 2048,
+    status: "neutral",
+    author: "Emily Watson",
+  },
+  {
+    id: "dep-8",
+    version: "v2.4.2",
+    commitSha: "h5j8k09",
+    application: "payment-gateway",
+    timestamp: subtractDays(3),
+    energyBefore: 78,
+    energyAfter: 45,
+    carbonBefore: 29.64,
+    carbonAfter: 17.1,
+    efficiencyBefore: 72,
+    efficiencyAfter: 86,
+    cpuBefore: 34,
+    cpuAfter: 21,
+    memoryBefore: 512,
+    memoryAfter: 490,
+    status: "improved",
+    author: "Sarah Chen",
+  },
+  {
+    id: "dep-9",
+    version: "v3.1.1",
+    commitSha: "i9l2m34",
+    application: "auth-service",
+    timestamp: subtractDays(1),
+    energyBefore: 11,
+    energyAfter: 12,
+    carbonBefore: 4.18,
+    carbonAfter: 4.56,
+    efficiencyBefore: 92,
+    efficiencyAfter: 90,
+    cpuBefore: 12,
+    cpuAfter: 12.4,
+    memoryBefore: 248,
+    memoryAfter: 256,
+    status: "neutral",
+    author: "Khangal Hugo",
+  },
+  {
+    id: "dep-10",
+    version: "v1.8.4",
+    commitSha: "j3n6o78",
+    application: "data-pipeline",
+    timestamp: subtractDays(0),
+    energyBefore: 4520,
+    energyAfter: 2100,
+    carbonBefore: 1717.6,
+    carbonAfter: 798,
+    efficiencyBefore: 62,
+    efficiencyAfter: 78,
+    cpuBefore: 82,
+    cpuAfter: 74,
+    memoryBefore: 4096,
+    memoryAfter: 3800,
+    status: "improved",
+    author: "Emily Watson",
+  },
+];
+
+export const mockBenchmarks: Benchmark[] = [
+  {
+    id: "bench-1",
+    name: "PR #482: Refactor encryption module",
+    type: "branch",
+    application: "payment-gateway",
+    timestamp: subtractDays(1),
+    metrics: { energy: 78, carbon: 29.64, efficiency: 72, cpu: 34, memory: 512, latency: 145 },
+    baselineMetrics: { energy: 42, carbon: 15.96, efficiency: 88, cpu: 18, memory: 480, latency: 120 },
+    verdict: "regression",
+  },
+  {
+    id: "bench-2",
+    name: "Commit b7d2e45: Migrate to PostgreSQL 15",
+    type: "commit",
+    application: "auth-service",
+    timestamp: subtractDays(2),
+    metrics: { energy: 11, carbon: 4.18, efficiency: 92, cpu: 12, memory: 248, latency: 45 },
+    baselineMetrics: { energy: 14, carbon: 5.32, efficiency: 85, cpu: 15, memory: 260, latency: 52 },
+    verdict: "improved",
+  },
+  {
+    id: "bench-3",
+    name: "Deployment v1.8.3: ETL batch processing",
+    type: "deployment",
+    application: "data-pipeline",
+    timestamp: subtractDays(3),
+    metrics: { energy: 4520, carbon: 1717.6, efficiency: 62, cpu: 82, memory: 4096, latency: 3200 },
+    baselineMetrics: { energy: 4400, carbon: 1672, efficiency: 64, cpu: 80, memory: 3900, latency: 3100 },
+    verdict: "regression",
+  },
+  {
+    id: "bench-4",
+    name: "PR #491: WebP-native encoding",
+    type: "branch",
+    application: "image-processor",
+    timestamp: subtractDays(4),
+    metrics: { energy: 8, carbon: 1.76, efficiency: 95, cpu: 5.6, memory: 128, latency: 32 },
+    baselineMetrics: { energy: 10, carbon: 3.8, efficiency: 90, cpu: 7, memory: 140, latency: 38 },
+    verdict: "improved",
+  },
+  {
+    id: "bench-5",
+    name: "Version v4.2.0: Elasticsearch reindex",
+    type: "version",
+    application: "search-indexer",
+    timestamp: subtractDays(5),
+    metrics: { energy: 8900, carbon: 3372, efficiency: 56, cpu: 91, memory: 8192, latency: 7200 },
+    baselineMetrics: { energy: 8700, carbon: 3296, efficiency: 58, cpu: 89, memory: 7800, latency: 7000 },
+    verdict: "regression",
+  },
+  {
+    id: "bench-6",
+    name: "Commit d4e5b23: Thumbnail pipeline v2",
+    type: "commit",
+    application: "image-processor",
+    timestamp: subtractDays(4),
+    metrics: { energy: 8, carbon: 1.76, efficiency: 95, cpu: 5.6, memory: 128, latency: 32 },
+    baselineMetrics: { energy: 10, carbon: 3.8, efficiency: 90, cpu: 7, memory: 140, latency: 38 },
+    verdict: "improved",
+  },
+  {
+    id: "bench-7",
+    name: "PR #495: Optimize notification batching",
+    type: "branch",
+    application: "notification-dispatcher",
+    timestamp: subtractDays(6),
+    metrics: { energy: 14, carbon: 5.32, efficiency: 84, cpu: 4.2, memory: 192, latency: 28 },
+    baselineMetrics: { energy: 15, carbon: 5.7, efficiency: 82, cpu: 5, memory: 200, latency: 30 },
+    verdict: "improved",
+  },
+  {
+    id: "bench-8",
+    name: "Deployment v3.0.1: ML model update",
+    type: "deployment",
+    application: "recommendation-engine",
+    timestamp: subtractDays(7),
+    metrics: { energy: 3200, carbon: 1216, efficiency: 65, cpu: 65, memory: 2048, latency: 1800 },
+    baselineMetrics: { energy: 3100, carbon: 1178, efficiency: 68, cpu: 62, memory: 1900, latency: 1750 },
+    verdict: "neutral",
+  },
+];
+
+export const mockHotspots: Hotspot[] = [
+  {
+    id: "hs-1",
+    application: "search-indexer",
+    endpoint: "/reindex-all",
+    energyWh: 8900,
+    carbonGrams: 3372,
+    trend: "regressing",
+    severity: "critical",
+  },
+  {
+    id: "hs-2",
+    application: "data-pipeline",
+    endpoint: "/etl-batch",
+    energyWh: 4520,
+    carbonGrams: 1717.6,
+    trend: "regressing",
+    severity: "critical",
+  },
+  {
+    id: "hs-3",
+    application: "recommendation-engine",
+    endpoint: "/train-model",
+    energyWh: 3200,
+    carbonGrams: 1216,
+    trend: "stable",
+    severity: "warning",
+  },
+  {
+    id: "hs-4",
+    application: "data-pipeline",
+    endpoint: "/aggregate-db",
+    energyWh: 2100,
+    carbonGrams: 798,
+    trend: "improving",
+    severity: "warning",
+  },
+  {
+    id: "hs-5",
+    application: "payment-gateway",
+    endpoint: "/stripe-charge",
+    energyWh: 45,
+    carbonGrams: 17.1,
+    trend: "improving",
+    severity: "info",
+  },
+  {
+    id: "hs-6",
+    application: "auth-service",
+    endpoint: "/token-sign",
+    energyWh: 12,
+    carbonGrams: 4.56,
+    trend: "stable",
+    severity: "info",
+  },
+  {
+    id: "hs-7",
+    application: "image-processor",
+    endpoint: "/thumbnail-gen",
+    energyWh: 8,
+    carbonGrams: 1.76,
+    trend: "improving",
+    severity: "info",
+  },
+  {
+    id: "hs-8",
+    application: "auth-service",
+    endpoint: "/validate-session",
+    energyWh: 3,
+    carbonGrams: 1.14,
+    trend: "stable",
+    severity: "info",
+  },
+];
+
+export const mockGreenScoreHistory: GreenScore[] = Array.from({ length: 30 }).map((_, i) => {
+  const date = new Date(baseDate);
+  date.setDate(date.getDate() - (29 - i));
+  const baseScore = 62;
+  const trend = i * 0.8;
+  const noise = Math.sin(i * 0.7) * 4 + Math.cos(i * 0.3) * 2;
+  return {
+    id: `gs-${i}`,
+    date: date.toISOString(),
+    score: Math.min(95, Math.max(50, Math.round(baseScore + trend + noise))),
+    energy: Math.round(5200 - i * 25 + Math.sin(i) * 200),
+    carbon: Math.round(1976 - i * 10 + Math.sin(i) * 80),
+    efficiency: Math.min(95, Math.max(60, Math.round(72 + i * 0.6 + noise * 0.5))),
+  };
+});
+
+export const mockReports: Report[] = [
+  {
+    id: "rpt-1",
+    title: "Weekly Sustainability Report",
+    type: "weekly",
+    date: subtractDays(0),
+    summary: "This week your software saved 142 kWh of energy and avoided 53.96 kg of CO₂e emissions. That is equivalent to 2.45 trees absorbing carbon for an entire year.",
+    metrics: {
+      energySaved: 142,
+      carbonAvoided: 53960,
+      treesEquivalent: 2.45,
+      efficiencyGain: 4.2,
+      measurementsCount: 847,
+    },
+  },
+  {
+    id: "rpt-2",
+    title: "Carbon Emissions Report",
+    type: "carbon",
+    date: subtractDays(1),
+    summary: "Total carbon footprint across all services: 1.97 kg CO₂e. Grid intensity averaged 389 gCO₂e/kWh. Scheduling changes could reduce this by 31%.",
+    metrics: {
+      carbonAvoided: 31000,
+      treesEquivalent: 1.41,
+      measurementsCount: 234,
+    },
+  },
+  {
+    id: "rpt-3",
+    title: "Engineering Efficiency Report",
+    type: "engineering",
+    date: subtractDays(2),
+    summary: "Top contributors to energy efficiency this week: auth-service (upgraded DB, -12.5% energy), image-processor (WebP migration, -40% energy), notification-dispatcher (batching, -7% energy).",
+    metrics: {
+      efficiencyGain: 8.7,
+      measurementsCount: 1203,
+    },
+  },
+  {
+    id: "rpt-4",
+    title: "Green Score Progress Report",
+    type: "green-score",
+    date: subtractDays(3),
+    summary: "Green Score improved from 62 to 78 over 30 days. Main drivers: auth-service PostgreSQL upgrade, image-processor WebP migration, and recommendation-engine scheduling optimization.",
+    metrics: {
+      efficiencyGain: 16,
+      energySaved: 890,
+      carbonAvoided: 338200,
+      treesEquivalent: 15.37,
+    },
+  },
+  {
+    id: "rpt-5",
+    title: "Project Sustainability Timeline",
+    type: "timeline",
+    date: subtractDays(0),
+    summary: "Key milestones: Week 1 - Kepler agent deployed. Week 2 - First carbon alert triggered. Week 3 - 3 optimizations applied. Week 4 - Green Score crossed 75. Ongoing: 5 services monitored, 47 measurements daily.",
+    metrics: {
+      measurementsCount: 47,
+      energySaved: 2100,
+      carbonAvoided: 798000,
+      treesEquivalent: 36.27,
+    },
+  },
+];
+
 export const getFilteredApplications = (
   environment: string,
   searchQuery: string

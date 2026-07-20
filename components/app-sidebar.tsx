@@ -10,6 +10,7 @@ import {
   LightbulbIcon,
   SparklesIcon,
   FlameIcon,
+  GitBranchIcon,
   FileSpreadsheetIcon,
   AlertTriangleIcon,
   PlugIcon,
@@ -35,9 +36,9 @@ import {
 
 const userMock = {
   name: "Khangal Hugo",
-  email: "sarah.chen@effictiv.ai",
+  email: "khangalhugo@protonmail.com",
   avatar:
-    "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80",
+    "https://cdn.myanimelist.net/s/common/userimages/f18459b8-04c1-431f-9dff-0a88757aacc3_225w?s=e330b4184c5281d4dc2e209803377100",
 };
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
@@ -65,6 +66,7 @@ export function AppSidebar({
       items: [
         { title: "Analytics", id: "analytics", icon: BarChart3Icon },
         { title: "Insights", id: "insights", icon: LightbulbIcon },
+        { title: "Deployments", id: "deployments", icon: GitBranchIcon },
         { title: "Benchmarks", id: "benchmarks", icon: FlameIcon },
       ],
     },
