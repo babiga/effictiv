@@ -1,3 +1,7 @@
+<img src="public\logo.png" alt="Logo Description" width="192">
+
+#
+
 # ⚡ Effictiv
 
 > **Open-source Software Energy Intelligence Platform**

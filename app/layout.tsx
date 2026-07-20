@@ -9,7 +9,11 @@ const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
   title: "Effictiv | Software Energy Intelligence Platform",
-  description: "Understand, optimize, and reduce the energy consumption, cloud costs, and carbon footprint of your software.",
+  description:
+    "Understand, optimize, and reduce the energy consumption, cloud costs, and carbon footprint of your software.",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({

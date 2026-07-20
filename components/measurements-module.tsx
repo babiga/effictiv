@@ -65,7 +65,7 @@ function exportToCSVHelper(filteredData: typeof mockMeasurements) {
 
 export function MeasurementsModule() {
   const [data] = React.useState(mockMeasurements);
-  const [selectedApp, setSelectedApp] = React.useState<string>("all");
+  const [selectedApp, setSelectedApp] = React.useState<string | null>("all");
   const [searchQuery, setSearchQuery] = React.useState("");
   const [sortField, setSortField] = React.useState<
     "timestamp" | "energyWh" | "cpuPercent" | "cost"
