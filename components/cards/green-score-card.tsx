@@ -1,6 +1,12 @@
 "use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 interface GreenScoreCardProps {
   score: number;
@@ -8,15 +14,33 @@ interface GreenScoreCardProps {
   size?: "sm" | "md" | "lg";
 }
 
-export function GreenScoreCard({ score, previousScore, size = "md" }: GreenScoreCardProps) {
+export function GreenScoreCard({
+  score,
+  previousScore,
+  size = "md",
+}: GreenScoreCardProps) {
   const change = previousScore ? score - previousScore : 0;
   const circumference = 2 * Math.PI * 36;
   const offset = circumference - (score / 100) * circumference;
 
   const getScoreColor = (s: number) => {
-    if (s >= 80) return { stroke: "#10b981", text: "text-emerald-500", bg: "bg-emerald-500/10" };
-    if (s >= 60) return { stroke: "#eab308", text: "text-yellow-500", bg: "bg-yellow-500/10" };
-    return { stroke: "#f97316", text: "text-orange-500", bg: "bg-orange-500/10" };
+    if (s >= 80)
+      return {
+        stroke: "#10b981",
+        text: "text-emerald-500",
+        bg: "bg-emerald-500/10",
+      };
+    if (s >= 60)
+      return {
+        stroke: "#eab308",
+        text: "text-yellow-500",
+        bg: "bg-yellow-500/10",
+      };
+    return {
+      stroke: "#f97316",
+      text: "text-orange-500",
+      bg: "bg-orange-500/10",
+    };
   };
 
   const colors = getScoreColor(score);
@@ -39,13 +63,16 @@ export function GreenScoreCard({ score, previousScore, size = "md" }: GreenScore
 
   return (
     <Card className="bg-card">
-      <CardHeader className="pb-2">
+      <CardHeader>
         <CardDescription className="text-[10px] uppercase font-semibold text-muted-foreground">
           Green Score
         </CardDescription>
       </CardHeader>
       <CardContent className="flex items-center gap-4">
-        <div className="relative flex-shrink-0" style={{ width: s.ring, height: s.ring }}>
+        <div
+          className="relative flex-shrink-0"
+          style={{ width: s.ring, height: s.ring }}
+        >
           <svg
             width={s.ring}
             height={s.ring}
@@ -82,7 +109,9 @@ export function GreenScoreCard({ score, previousScore, size = "md" }: GreenScore
         </div>
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold">Grade {getGrade(score)}</span>
+            <span className="text-sm font-semibold">
+              Grade {getGrade(score)}
+            </span>
             {change !== 0 && (
               <span
                 className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
@@ -91,7 +120,8 @@ export function GreenScoreCard({ score, previousScore, size = "md" }: GreenScore
                     : "bg-rose-500/10 text-rose-500"
                 }`}
               >
-                {change > 0 ? "+" : ""}{change}
+                {change > 0 ? "+" : ""}
+                {change}
               </span>
             )}
           </div>

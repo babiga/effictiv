@@ -23,9 +23,10 @@ interface Deployment {
 }
 
 interface EnergyTrendChartProps {
-  data: Array<{ date: string; energy: number; carbon?: number }>;
+  data: Array<{ date: string; energy: number; carbon?: number; cost?: number }>;
   height?: number;
   showCarbon?: boolean;
+  showCost?: boolean;
   deployments?: Deployment[];
 }
 
@@ -37,6 +38,10 @@ const config = {
   carbon: {
     label: "Carbon (gCO₂e)",
     color: "oklch(0.65 0.15 250)",
+  },
+  cost: {
+    label: "Cost ($)",
+    color: "oklch(0.72 0.16 55)",
   },
 } satisfies ChartConfig;
 
@@ -105,26 +110,66 @@ export function EnergyTrendChart({
   data,
   height = 280,
   showCarbon = false,
+  showCost = false,
   deployments = [],
 }: EnergyTrendChartProps) {
-  const deploymentDates = new Set(deployments.map((d) => d.date));
-
   return (
-    <ChartContainer config={config} className="aspect-auto w-full" style={{ height }}>
-      <AreaChart data={data} margin={{ left: 12, right: 12, top: 8, bottom: 4 }}>
+    <ChartContainer
+      config={config}
+      className="aspect-auto w-full"
+      style={{ height }}
+    >
+      <AreaChart
+        data={data}
+        margin={{ left: 12, right: 12, top: 8, bottom: 4 }}
+      >
         <defs>
           <linearGradient id="fillEnergy" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="var(--color-energy)" stopOpacity={0.2} />
-            <stop offset="95%" stopColor="var(--color-energy)" stopOpacity={0.01} />
+            <stop
+              offset="5%"
+              stopColor="var(--color-energy)"
+              stopOpacity={0.2}
+            />
+            <stop
+              offset="95%"
+              stopColor="var(--color-energy)"
+              stopOpacity={0.01}
+            />
           </linearGradient>
           {showCarbon && (
             <linearGradient id="fillCarbon" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="var(--color-carbon)" stopOpacity={0.15} />
-              <stop offset="95%" stopColor="var(--color-carbon)" stopOpacity={0.01} />
+              <stop
+                offset="5%"
+                stopColor="var(--color-carbon)"
+                stopOpacity={0.15}
+              />
+              <stop
+                offset="95%"
+                stopColor="var(--color-carbon)"
+                stopOpacity={0.01}
+              />
+            </linearGradient>
+          )}
+          {showCost && (
+            <linearGradient id="fillCost" x1="0" y1="0" x2="0" y2="1">
+              <stop
+                offset="5%"
+                stopColor="var(--color-cost)"
+                stopOpacity={0.15}
+              />
+              <stop
+                offset="95%"
+                stopColor="var(--color-cost)"
+                stopOpacity={0.01}
+              />
             </linearGradient>
           )}
         </defs>
-        <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border/40" />
+        <CartesianGrid
+          vertical={false}
+          strokeDasharray="3 3"
+          className="stroke-border/40"
+        />
         <XAxis
           dataKey="date"
           tickLine={false}
@@ -152,6 +197,16 @@ export function EnergyTrendChart({
             type="monotone"
             fill="url(#fillCarbon)"
             stroke="oklch(0.65 0.15 250)"
+            strokeWidth={2}
+          />
+        )}
+        {showCost && (
+          <Area
+            name="Cost ($)"
+            dataKey="cost"
+            type="monotone"
+            fill="url(#fillCost)"
+            stroke="oklch(0.72 0.16 55)"
             strokeWidth={2}
           />
         )}

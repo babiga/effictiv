@@ -321,7 +321,7 @@ export function InfrastructureModule() {
                           key={`cell-${index}`}
                           fill={
                             node.status === "Idle"
-                              ? "var(--color-destructive)"
+                              ? "oklch(0.645 0.246 16.439)"
                               : "oklch(0.627 0.194 149.251)"
                           }
                         />
@@ -371,9 +371,9 @@ export function InfrastructureModule() {
                       </div>
                       <Button
                         size="sm"
-                        variant="outline"
+                        variant="destructive"
                         onClick={() => terminateInstance(node.name)}
-                        className="text-[10px] h-7 px-2 border-rose-500/20 text-rose-500 bg-rose-500/5 hover:bg-rose-500/10"
+                        className="text-[10px] h-7 px-2 items-center"
                       >
                         <Trash2Icon className="h-3 w-3 mr-1" />
                         Terminate

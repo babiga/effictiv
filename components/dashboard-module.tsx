@@ -2,12 +2,7 @@
 
 import * as React from "react";
 import { motion } from "framer-motion";
-import {
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-} from "recharts";
+import { ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import {
   ZapIcon,
   TreePineIcon,
@@ -46,6 +41,10 @@ import { SustainabilitySummaryHero } from "@/components/cards/sustainability-sum
 import { SustainabilityImpact } from "@/components/cards/sustainability-impact";
 import { EnhancedInsightsSection } from "@/components/enhanced-insights-section";
 import { EnhancedRecommendationsSection } from "@/components/enhanced-recommendations-section";
+import {
+  ServiceRadarChart,
+  computeRadarData,
+} from "@/components/charts/service-radar-chart";
 
 interface DashboardModuleProps {
   timeRange: string;
@@ -98,9 +97,11 @@ export function DashboardModule({
 
   const trendData = React.useMemo(() => {
     const points = timeRange === "7d" ? 7 : timeRange === "30d" ? 15 : 30;
-    const baseValues = [1820, 1795, 1810, 1780, 1750, 1770, 1740, 1760, 1730, 1720,
-      1710, 1700, 1690, 1685, 1680, 1675, 1670, 1665, 1660, 1655, 1650, 1648,
-      1645, 1642, 1640, 1638, 1635, 1633, 1630, 1628];
+    const baseValues = [
+      1820, 1795, 1810, 1780, 1750, 1770, 1740, 1760, 1730, 1720, 1710, 1700,
+      1690, 1685, 1680, 1675, 1670, 1665, 1660, 1655, 1650, 1648, 1645, 1642,
+      1640, 1638, 1635, 1633, 1630, 1628,
+    ];
     return Array.from({ length: points }).map((_, idx) => {
       const day = points - idx;
       const date = new Date();
@@ -121,6 +122,7 @@ export function DashboardModule({
         }),
         energy: Math.round(baseEnergy + offset),
         carbon: Math.round((baseEnergy + offset) * 0.38),
+        cost: Math.round((baseEnergy + offset) * 0.15 * 100) / 100,
       };
     });
   }, [timeRange, environment]);
@@ -227,6 +229,8 @@ export function DashboardModule({
     },
   ];
 
+  const radarData = React.useMemo(() => computeRadarData(mockMeasurements), []);
+
   return (
     <div className="flex flex-col gap-6 p-4 lg:p-6">
       {/* Section 1: Sustainability Summary Hero */}
@@ -243,7 +247,7 @@ export function DashboardModule({
         className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5"
       >
         <Card className="bg-card shadow-sm hover:border-muted-foreground/30 transition-all duration-200">
-          <CardHeader className="pb-2">
+          <CardHeader>
             <CardDescription className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
               <span>Green Score</span>
               <LeafIcon className="h-4 w-4 text-emerald-500" />
@@ -255,7 +259,7 @@ export function DashboardModule({
               </span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="pb-2">
+          <CardContent>
             <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
               <SparklesIcon className="h-3.5 w-3.5" />
               <span>
@@ -266,7 +270,7 @@ export function DashboardModule({
         </Card>
 
         <Card className="bg-card shadow-sm hover:border-muted-foreground/30 transition-all duration-200">
-          <CardHeader className="pb-2">
+          <CardHeader>
             <CardDescription className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
               <span>Energy Usage</span>
               <ZapIcon className="h-4 w-4 text-emerald-500" />
@@ -280,7 +284,7 @@ export function DashboardModule({
               </span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="pb-2">
+          <CardContent>
             <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
               <SparklesIcon className="h-3.5 w-3.5" />
               <span>-4.2% from last period</span>
@@ -289,7 +293,7 @@ export function DashboardModule({
         </Card>
 
         <Card className="bg-card shadow-sm hover:border-muted-foreground/30 transition-all duration-200">
-          <CardHeader className="pb-2">
+          <CardHeader>
             <CardDescription className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
               <span>Carbon Footprint</span>
               <TreePineIcon className="h-4 w-4 text-emerald-500" />
@@ -303,7 +307,7 @@ export function DashboardModule({
               </span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="pb-2">
+          <CardContent>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <TreePineIcon className="h-3 w-3 text-emerald-500" />
               <span>≈ {treesEquivalent} trees absorbing CO₂ for a year</span>
@@ -312,7 +316,7 @@ export function DashboardModule({
         </Card>
 
         <Card className="bg-card shadow-sm hover:border-muted-foreground/30 transition-all duration-200">
-          <CardHeader className="pb-2">
+          <CardHeader>
             <CardDescription className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
               <span>Efficiency Score</span>
               <ZapIcon className="h-4 w-4 text-yellow-500" />
@@ -337,7 +341,7 @@ export function DashboardModule({
               </Badge>
             </CardTitle>
           </CardHeader>
-          <CardContent className="pb-2">
+          <CardContent>
             <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
               <SparklesIcon className="h-3.5 w-3.5" />
               <span>+2 points increase</span>
@@ -346,7 +350,7 @@ export function DashboardModule({
         </Card>
 
         <Card className="border-emerald-500/20 bg-emerald-500/[0.03] shadow-sm transition-all duration-200 hover:border-emerald-500/40 dark:bg-emerald-500/[0.02]">
-          <CardHeader className="pb-2">
+          <CardHeader>
             <CardDescription className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
               <span>Energy Reduction Potential</span>
               <ZapIcon className="h-4 w-4 animate-pulse text-emerald-500" />
@@ -356,9 +360,11 @@ export function DashboardModule({
               <span className="text-xs font-normal">kWh/mo</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="pb-2">
+          <CardContent>
             <div className="flex items-center justify-between text-xs font-medium text-emerald-700/80 dark:text-emerald-400/80">
-              <span>{activeRecommendations.length} optimizations available</span>
+              <span>
+                {activeRecommendations.length} optimizations available
+              </span>
               <button
                 onClick={() => onNavigate("recommendations")}
                 className="leading-none text-[10px] text-emerald-600 hover:underline dark:text-emerald-400"
@@ -370,13 +376,14 @@ export function DashboardModule({
         </Card>
       </motion.div>
 
-      {/* Section 3: Energy & Carbon Trend */}
+      {/* Section 3: Energy & Carbon Trend + Infrastructure Share */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.2 }}
+        className="grid grid-cols-1 gap-6 lg:grid-cols-3"
       >
-        <Card>
+        <Card className="lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <div>
               <CardTitle className="text-base font-semibold">
@@ -393,15 +400,96 @@ export function DashboardModule({
               Live Telemetry
             </Badge>
           </CardHeader>
-          <CardContent className="px-2 pt-2">
+          <CardContent className="min-h-[450px] px-2 pt-2">
             <EnergyTrendChart
               data={trendData}
-              height={300}
+              height={450}
               showCarbon
+              showCost
               deployments={deploymentMarkers}
             />
           </CardContent>
         </Card>
+
+        <div className="flex flex-col gap-6">
+          <Card className="flex flex-col">
+            <CardHeader className="pb-0">
+              <CardTitle className="text-base font-semibold">
+                Infrastructure Share
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Energy consumption by provider
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-1 flex-row items-center justify-between">
+              <div className="relative size-24 flex-shrink-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={infraData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={30}
+                      outerRadius={45}
+                      paddingAngle={4}
+                      dataKey="value"
+                    >
+                      {infraData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="ml-4 flex flex-1 flex-col gap-1.5">
+                {infraData.map((item) => (
+                  <div
+                    key={item.name}
+                    className="flex items-center justify-between text-xs"
+                  >
+                    <div className="flex min-w-0 items-center gap-1.5">
+                      <span
+                        className="size-2 flex-shrink-0 rounded-full"
+                        style={{ backgroundColor: item.color }}
+                      />
+                      <span className="truncate text-muted-foreground">
+                        {item.name}
+                      </span>
+                    </div>
+                    <span className="ml-2 font-semibold tabular-nums">
+                      {Math.round((item.value / totalEnergy) * 100)}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+            <CardFooter className="justify-center py-0.5">
+              <Button
+                variant="link"
+                size="sm"
+                onClick={() => onNavigate("infrastructure")}
+                className="h-7 gap-1 text-xs"
+              >
+                View Infrastructure Details
+                <PlayIcon className="h-2 w-2" />
+              </Button>
+            </CardFooter>
+          </Card>
+
+          <Card className="flex flex-col flex-1">
+            <CardHeader>
+              <CardTitle className="text-base font-semibold">
+                Service Energy Profile
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Resource footprint across your top services
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1">
+              <ServiceRadarChart data={radarData} height={220} />
+            </CardContent>
+          </Card>
+        </div>
       </motion.div>
 
       {/* Section 4: AI Sustainability Insights */}

@@ -235,7 +235,7 @@ export function ApplicationsModule({
               </div>
               <Badge
                 variant="outline"
-                className={`text-[18px] py-1.5 px-3 rounded-md shrink-0 ${getGradeBadgeClass(app.energyScore)}`}
+                className={`text-[18px] py-3 px-3 rounded-md shrink-0 ${getGradeBadgeClass(app.energyScore)}`}
               >
                 {app.energyScore}
               </Badge>
@@ -317,11 +317,11 @@ export function ApplicationsModule({
         onOpenChange={(open) => !open && setSelectedApp(null)}
       >
         {selectedApp && (
-          <DialogContent className="max-w-2xl bg-card overflow-y-auto max-h-[90vh]">
+          <DialogContent className="sm:max-w-4xl max-w-4xl bg-card overflow-y-auto max-h-[90vh]">
             <DialogHeader>
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <DialogTitle className="text-xl  flex items-center gap-2">
+                  <DialogTitle className="text-xl flex items-center gap-2">
                     {selectedApp.name}
                     <Badge
                       variant="outline"
@@ -337,7 +337,7 @@ export function ApplicationsModule({
                 </div>
                 <Badge
                   variant="outline"
-                  className={`text-2xl py-2 px-4 rounded-xl ${getGradeBadgeClass(selectedApp.energyScore)}`}
+                  className={`text-lg font-medium py-3 px-2 rounded-xl ${getGradeBadgeClass(selectedApp.energyScore)}`}
                 >
                   {selectedApp.energyScore}
                 </Badge>

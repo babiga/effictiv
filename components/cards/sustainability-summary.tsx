@@ -48,44 +48,50 @@ export function SustainabilitySummaryHero({
             {summary.narrative}
           </p>
 
-          <div className="flex flex-wrap gap-x-6 gap-y-3">
-            <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-emerald-500/10">
-                <ZapIcon className="h-3.5 w-3.5 text-emerald-500" />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="flex items-center gap-3 rounded-xl p-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg">
+                <ZapIcon className="h-6 w-6 text-emerald-500" />
               </div>
               <div>
-                <div className="text-sm font-bold tabular-nums text-foreground">
-                  {summary.energyAvoidedKwh.toLocaleString()} kWh
+                <div className="text-2xl font-bold tracking-tight tabular-nums text-foreground">
+                  {summary.energyAvoidedKwh.toLocaleString()}{" "}
+                  <span className="text-sm font-normal text-muted-foreground">
+                    kWh
+                  </span>
                 </div>
-                <div className="text-[10px] text-muted-foreground">
+                <div className="text-xs font-medium text-muted-foreground">
                   Energy avoided
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-emerald-500/10">
-                <TreePineIcon className="h-3.5 w-3.5 text-emerald-500" />
+            <div className="flex items-center gap-3 rounded-xl p-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg">
+                <TreePineIcon className="h-6 w-6 text-emerald-500" />
               </div>
               <div>
-                <div className="text-sm font-bold tabular-nums text-foreground">
-                  {summary.carbonPreventedKg.toLocaleString()} kg CO₂e
+                <div className="text-2xl font-bold tracking-tight tabular-nums text-foreground">
+                  {summary.carbonPreventedKg.toLocaleString()}{" "}
+                  <span className="text-sm font-normal text-muted-foreground">
+                    kg CO₂e
+                  </span>
                 </div>
-                <div className="text-[10px] text-muted-foreground">
+                <div className="text-xs font-medium text-muted-foreground">
                   Carbon prevented
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-emerald-500/10">
-                <TrendingDownIcon className="h-3.5 w-3.5 text-emerald-500" />
+            <div className="flex items-center gap-3 rounded-xl p-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg">
+                <TrendingDownIcon className="h-6 w-6 text-emerald-500" />
               </div>
               <div>
-                <div className="text-sm font-bold tabular-nums text-foreground">
+                <div className="text-2xl font-bold tracking-tight tabular-nums text-foreground">
                   ~${summary.estimatedCostSavings.toLocaleString()}
                 </div>
-                <div className="text-[10px] text-muted-foreground">
+                <div className="text-xs font-medium text-muted-foreground">
                   Infrastructure savings
                 </div>
               </div>
@@ -125,7 +131,7 @@ export function SustainabilitySummaryHero({
         </div>
 
         {/* Right: Green Score Gauge */}
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 my-auto">
           <GreenScoreCard
             score={summary.greenScoreCurrent}
             previousScore={summary.greenScorePrevious}
