@@ -6,18 +6,27 @@ import {
   CartesianGrid,
   XAxis,
   ResponsiveContainer,
+  ReferenceLine,
+  ReferenceDot,
 } from "recharts";
 import {
   ChartContainer,
   ChartTooltip,
-  ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
+
+interface Deployment {
+  date: string;
+  version: string;
+  status: "improved" | "regression" | "neutral";
+  energyChangePercent: number;
+}
 
 interface EnergyTrendChartProps {
   data: Array<{ date: string; energy: number; carbon?: number }>;
   height?: number;
   showCarbon?: boolean;
+  deployments?: Deployment[];
 }
 
 const config = {
@@ -31,11 +40,75 @@ const config = {
   },
 } satisfies ChartConfig;
 
+function CustomTooltip({
+  active,
+  payload,
+  label,
+  deployments,
+}: {
+  active?: boolean;
+  payload?: Array<{ value: number; name: string; color: string }>;
+  label?: string;
+  deployments?: Deployment[];
+}) {
+  if (!active || !payload?.length) return null;
+
+  const deploy = deployments?.find((d) => d.date === label);
+
+  return (
+    <div className="rounded-lg border border-border/60 bg-background/95 p-3 shadow-xl backdrop-blur-sm">
+      <div className="mb-1.5 text-xs font-medium text-muted-foreground">
+        {label}
+      </div>
+      {payload.map((entry, idx) => (
+        <div key={idx} className="flex items-center gap-2 text-xs">
+          <span
+            className="h-2 w-2 rounded-full"
+            style={{ backgroundColor: entry.color }}
+          />
+          <span className="text-muted-foreground">{entry.name}:</span>
+          <span className="font-semibold tabular-nums text-foreground">
+            {entry.value.toLocaleString()}
+          </span>
+        </div>
+      ))}
+      {deploy && (
+        <div className="mt-2 border-t border-border/40 pt-2">
+          <div className="flex items-center gap-1.5">
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${
+                deploy.status === "improved"
+                  ? "bg-emerald-500"
+                  : deploy.status === "regression"
+                    ? "bg-rose-500"
+                    : "bg-muted-foreground"
+              }`}
+            />
+            <span className="text-[11px] font-medium text-foreground">
+              {deploy.version}
+            </span>
+          </div>
+          <p className="mt-0.5 text-[10px] text-muted-foreground">
+            {deploy.status === "improved"
+              ? `Energy decreased by ${Math.abs(deploy.energyChangePercent)}%`
+              : deploy.status === "regression"
+                ? `Energy increased by ${deploy.energyChangePercent}%`
+                : "No significant energy change"}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function EnergyTrendChart({
   data,
   height = 280,
   showCarbon = false,
+  deployments = [],
 }: EnergyTrendChartProps) {
+  const deploymentDates = new Set(deployments.map((d) => d.date));
+
   return (
     <ChartContainer config={config} className="aspect-auto w-full" style={{ height }}>
       <AreaChart data={data} margin={{ left: 12, right: 12, top: 8, bottom: 4 }}>
@@ -62,7 +135,7 @@ export function EnergyTrendChart({
         />
         <ChartTooltip
           cursor={false}
-          content={<ChartTooltipContent indicator="dot" />}
+          content={<CustomTooltip deployments={deployments} />}
         />
         <Area
           name="Energy (kWh)"
@@ -82,6 +155,42 @@ export function EnergyTrendChart({
             strokeWidth={2}
           />
         )}
+        {deployments.map((dep) => (
+          <ReferenceLine
+            key={dep.version}
+            x={dep.date}
+            stroke={
+              dep.status === "improved"
+                ? "oklch(0.627 0.194 149.251)"
+                : dep.status === "regression"
+                  ? "oklch(0.637 0.237 25.331)"
+                  : "oklch(0.556 0 0)"
+            }
+            strokeDasharray="4 4"
+            strokeOpacity={0.5}
+          />
+        ))}
+        {deployments.map((dep) => {
+          const dataPoint = data.find((d) => d.date === dep.date);
+          if (!dataPoint) return null;
+          return (
+            <ReferenceDot
+              key={`dot-${dep.version}`}
+              x={dep.date}
+              y={dataPoint.energy}
+              r={4}
+              fill={
+                dep.status === "improved"
+                  ? "oklch(0.627 0.194 149.251)"
+                  : dep.status === "regression"
+                    ? "oklch(0.637 0.237 25.331)"
+                    : "oklch(0.556 0 0)"
+              }
+              stroke="var(--background)"
+              strokeWidth={2}
+            />
+          );
+        })}
       </AreaChart>
     </ChartContainer>
   );

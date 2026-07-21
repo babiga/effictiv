@@ -98,7 +98,7 @@ export function AppSidebar({
               className="data-[slot=sidebar-menu-button]:!p-1.5 hover:bg-transparent active:bg-transparent focus-visible:ring-0"
               onClick={() => onSelectTab("dashboard")}
             >
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-emerald-400 text-primary-foreground">
                 <LeafIcon className="size-4" />
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">

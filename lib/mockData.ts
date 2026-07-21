@@ -152,6 +152,23 @@ export interface Report {
   };
 }
 
+export interface SustainabilitySummary {
+  period: string;
+  narrative: string;
+  energyChangePercent: number;
+  energyAvoidedKwh: number;
+  carbonPreventedKg: number;
+  estimatedCostSavings: number;
+  greenScoreCurrent: number;
+  greenScorePrevious: number;
+  optimizationsRemaining: number;
+  impact: {
+    treesEquivalent: number;
+    drivingKmAvoided: number;
+    homeElectricityMonths: number;
+  };
+}
+
 const baseDate = new Date();
 const subtractDays = (days: number) => {
   const d = new Date(baseDate);
@@ -1050,3 +1067,25 @@ export const getFilteredApplications = (
     return matchesEnv && matchesSearch;
   });
 };
+
+export const mockSustainabilitySummary: SustainabilitySummary = {
+  period: "this month",
+  narrative: "Your software consumed 9% less energy than last month.",
+  energyChangePercent: -9,
+  energyAvoidedKwh: 1677,
+  carbonPreventedKg: 652,
+  estimatedCostSavings: 186,
+  greenScoreCurrent: 88,
+  greenScorePrevious: 82,
+  optimizationsRemaining: 12,
+  impact: {
+    treesEquivalent: 94,
+    drivingKmAvoided: 7800,
+    homeElectricityMonths: 3,
+  },
+};
+
+export const carbonPerKwh = 389;
+export const drivingKmPerKgCo2 = 12;
+export const homeElectricityKwhPerMonth = 900;
+export const treesKgCo2PerYear = 21;

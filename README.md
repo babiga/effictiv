@@ -6,13 +6,7 @@
 
 > **Open-source Software Energy Intelligence Platform for Green Software**
 
-Effictiv helps engineering teams measure, understand, and reduce the **energy consumption** and **carbon footprint** of their software.
-
-As software continues to power more of the world's infrastructure, improving software efficiency has become an important sustainability challenge. Effictiv brings together energy measurement, sustainability analytics, and AI-powered insights into a single developer-friendly platform.
-
-Our mission is simple:
-
-> **Build software that consumes less energy and has a smaller environmental impact.**
+Effictiv is an open-source Software Energy Intelligence Platform that helps engineering teams build energy-efficient software. By measuring energy consumption, analyzing carbon emissions, and providing AI-powered optimization insights, Effictiv enables developers to reduce the environmental impact of their applications while naturally improving infrastructure efficiency and lowering operational costs.
 
 ---
 
