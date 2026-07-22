@@ -135,7 +135,7 @@ export default function Page() {
           onTimeRangeChange={setTimeRange}
         />
 
-        <main className="flex flex-1 flex-col overflow-y-auto bg-neutral-50/50">
+        <main className="flex flex-1 flex-col overflow-y-auto bg-dashboard-background">
           {renderModuleContent()}
         </main>
       </SidebarInset>
