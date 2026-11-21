@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:migrate": "node scripts/migrate.mjs",
+    "import:run": "node scripts/import-run.mjs",
+    "test:measurements": "node --test tests/measurements.test.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
@@ -26,6 +29,7 @@
     "lucide-react": "^1.25.0",
     "next": "16.2.10",
     "next-themes": "^0.4.6",
+    "pg": "8.23.1",
     "react": "19.2.4",
     "react-day-picker": "^10.0.1",
     "react-dom": "19.2.4",
@@ -40,6 +44,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/pg": "8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
