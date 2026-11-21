@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { DownloadIcon, RefreshCwIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useMeasurementsPage } from "@/hooks/use-measurements-page";
 import { pilotRepositoryId, pilotRepositoryName } from "@/lib/measurements/pilot.mjs";
 import type { RunPage, RunSummary } from "@/lib/measurements/types";
 
@@ -19,14 +20,10 @@ const startedAtFormat = new Intl.DateTimeFormat(undefined, {
   dateStyle: "medium", timeStyle: "short", timeZone: "UTC",
 });
 
-type FetchResult = { key: string; page: RunPage } | { key: string; error: true };
-
 export function LiveMeasurements() {
   const [scenario, setScenario] = useState("all");
   const [search, setSearch] = useState("");
   const [cursors, setCursors] = useState<string[]>([]);
-  const [refresh, setRefresh] = useState(0);
-  const [result, setResult] = useState<FetchResult>();
 
   const filters = new URLSearchParams();
   if (scenario !== "all") filters.set("scenario", scenario);
@@ -35,26 +32,7 @@ export function LiveMeasurements() {
   exportParams.set("format", "csv");
   const cursor = cursors.at(-1);
   if (cursor) filters.set("cursor", cursor);
-  const url = `${endpoint}?${filters}`;
-  const key = `${url}#${refresh}`;
-  const current = result?.key === key ? result : undefined;
-  const page = current && "page" in current ? current.page : undefined;
-
-  useEffect(() => {
-    const controller = new AbortController();
-    async function load() {
-      try {
-        const response = await fetch(url, { signal: controller.signal });
-        if (!response.ok) throw new Error("Measurements request failed");
-        const page: RunPage = await response.json();
-        if (!controller.signal.aborted) setResult({ key, page });
-      } catch {
-        if (!controller.signal.aborted) setResult({ key, error: true });
-      }
-    }
-    void load();
-    return () => controller.abort();
-  }, [url, key]);
+  const { page, error, loading, refresh } = useMeasurementsPage<RunPage>(`${endpoint}?${filters}`);
 
   return (
     <div className="flex flex-col gap-4 p-4 lg:px-6">
@@ -64,7 +42,7 @@ export function LiveMeasurements() {
           <p className="text-sm text-muted-foreground">{pilotRepositoryName}</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setRefresh(refresh + 1)}>
+          <Button variant="outline" onClick={refresh}>
             <RefreshCwIcon /> Refresh
           </Button>
           {page?.runs.length ? (
@@ -97,13 +75,13 @@ export function LiveMeasurements() {
         </Select>
       </div>
 
-      <Card aria-busy={!current}>
+      <Card aria-busy={loading}>
         <CardContent>
-          {!current && <p role="status" className="text-muted-foreground">Loading measurements…</p>}
-          {current && "error" in current && (
+          {loading && <p role="status" className="text-muted-foreground">Loading measurements…</p>}
+          {error && (
             <div className="flex flex-wrap items-center gap-3">
               <p role="alert">Measurements are temporarily unavailable.</p>
-              <Button variant="outline" onClick={() => setRefresh(refresh + 1)}>Retry</Button>
+              <Button variant="outline" onClick={refresh}>Retry</Button>
             </div>
           )}
           {page?.runs.length === 0 && (

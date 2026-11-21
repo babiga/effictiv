@@ -26,6 +26,8 @@ import {
 import { mockMeasurements } from "@/lib/mockData";
 import { toast } from "sonner";
 import { LiveMeasurements } from "@/components/live-measurements";
+import { CiMeasurements } from "@/components/ci-measurements";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 function exportToCSVHelper(filteredData: typeof mockMeasurements) {
   const headers = [
@@ -75,7 +77,16 @@ export function MeasurementsModule() {
           Demo
         </Button>
       </div>
-      {mode === "live" ? <LiveMeasurements /> : <DemoMeasurements />}
+      {mode === "live" ? (
+        <Tabs defaultValue="visits" className="gap-0 pt-4">
+          <TabsList aria-label="Live measurement type" className="mx-4 lg:mx-6">
+            <TabsTrigger value="visits">Dashboard visits</TabsTrigger>
+            <TabsTrigger value="builds">CI builds</TabsTrigger>
+          </TabsList>
+          <TabsContent value="visits"><LiveMeasurements /></TabsContent>
+          <TabsContent value="builds"><CiMeasurements /></TabsContent>
+        </Tabs>
+      ) : <DemoMeasurements />}
     </>
   );
 }

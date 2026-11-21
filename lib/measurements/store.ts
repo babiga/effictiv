@@ -1,25 +1,13 @@
 import "server-only";
 
 import { createHash } from "node:crypto";
-import { Pool } from "pg";
 import type { z } from "zod";
+import { database } from "./database";
 import { raplMetric, type uploadSchema } from "./schema.mjs";
 import type { RunSummary } from "./types";
 import { dashboardCachePolicy, saveWebDeliveryEstimate } from "./web-delivery-v1.mjs";
 
 type RunUpload = z.infer<typeof uploadSchema>;
-
-let pool: Pool | undefined;
-
-function database() {
-  if (!pool) {
-    const connectionString = process.env.DATABASE_URL;
-    if (!connectionString) throw new Error("DATABASE_URL is required");
-    pool = new Pool({ connectionString, max: 3, connectionTimeoutMillis: 5000 });
-    pool.on("error", (error) => console.error("Idle measurements database connection failed", error));
-  }
-  return pool;
-}
 
 const energyDivisors = { uJ: 3_600_000_000, J: 3600, Wh: 1 };
 
@@ -134,13 +122,6 @@ export async function insertRun(upload: RunUpload) {
 
 export type RunFilters = { scenario?: string; search?: string };
 export type RunCursor = { startedAt: string; id: string };
-
-export async function publicProjectExists(repositoryId: string) {
-  const result = await database().query(
-    "SELECT 1 FROM projects WHERE repository_id = $1 AND is_public", [repositoryId],
-  );
-  return result.rows.length > 0;
-}
 
 export async function listRuns(repositoryId: string, filters: RunFilters, cursor?: RunCursor, limit?: number) {
   const result = await database().query<Omit<RunSummary, "startedAt"> & { startedAt: Date }>(`

@@ -53,8 +53,8 @@ Check an item when its evidence is available. Link the implementation PR or acce
    - [ ] Persist one recommendation, its patch, and its verification comparison.
    - [ ] Verify both dashboard paths against a declared latency budget and publish the evidence trail.
 5. **Add CI energy**
-   - [ ] Import one repeatable Eco CI build job.
-   - [ ] Verify replay and display build and visit energy with their respective boundaries.
+   - [x] Import one repeatable Eco CI build job. [Pilot capture](measurements-pilot.md#ci-build-energy)
+   - [x] Verify replay and display build and visit energy with their respective boundaries. [Integration tests](../tests/measurements.test.mjs)
 
 ### 1. Produce one real dashboard benchmark
 
@@ -92,7 +92,7 @@ Check an item when its evidence is available. Link the implementation PR or acce
 | Project | When to integrate | Result and boundary |
 | --- | --- | --- |
 | [Green Metrics Tool](https://github.com/green-coding-solutions/green-metrics-tool) | Milestone 1 | Scenario energy for the declared sensors and interval |
-| [Eco CI](https://github.com/green-coding-solutions/eco-ci-energy-estimation) | Milestone 5 | Modeled energy for CI jobs and steps |
+| [Eco CI](https://github.com/green-coding-solutions/eco-ci-energy-estimation) | Build pilot | Modeled energy for CI jobs and phases. [Pilot setup and results](measurements-pilot.md#ci-build-energy) |
 | [Kepler](https://github.com/sustainable-computing-io/kepler) | First Kubernetes pilot with cluster access | Energy attributed to cluster workloads. Record attribution method and node coverage. |
 | [Scaphandre](https://github.com/hubblo-org/scaphandre) | First pilot with a supported operator-managed host | Host readings and process allocations. Retain parent host scope to prevent aggregation overlap. |
 | [CodeCarbon](https://github.com/mlco2/codecarbon) | First Python or ML batch workload | Energy and estimated emissions per job with the device coverage and regional assumptions used |
