@@ -35,6 +35,13 @@ Live Measurements shows gCO₂e per visit for passing dashboard runs with a comp
 
 CO2.js `0.19.0` applies Sustainable Web Design v4 to each visit’s bytes using the global grid factor of 494 gCO₂e/kWh and a green hosting factor of zero. The model includes operational and embodied emissions for the network, data center, and visitor device. It uses lab transfers as a proxy for web delivery and estimates emissions even when CPU energy is unavailable. Its device and data-center boundaries can overlap measured CPU activity, so the UI reports the estimate alongside the separate Wh reading. [CO2.js v0.19.0](https://github.com/thegreenwebfoundation/co2.js/tree/v0.19.0)
 
+The November 21, 2026 pilot ran the production build with Playwright on the host. Each capture was imported and replayed against PostgreSQL 17.12. Each replay returned the original run ID. Live Measurements, the API, and CSV showed one estimate per capture while CPU energy was unavailable.
+
+| Capture | Completed visits | Bytes per visit | Total bytes | Modeled gCO₂e per visit |
+| --- | ---: | ---: | ---: | ---: |
+| [Dashboard landing](../benchmarks/dashboard/fixtures/co2js-pilot-v1/landing.log) | 3 | 557,935 | 1,673,805 | 0.082685967 |
+| [Dashboard scroll](../benchmarks/dashboard/fixtures/co2js-pilot-v1/scroll.log) | 3 | 557,935 | 1,673,805 | 0.082685967 |
+
 For an existing pilot, pause the trusted uploader and let in-flight imports finish. Run `npm run db:migrate` against the pilot database, deploy the updated app, then resume uploads. The migration backfills passing historical runs with complete byte observations. After rollout, replay a known upload and confirm it returns the same run ID and shows one estimate in Live Measurements and CSV.
 
 ## Verify locally
