@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { insertCiRun } from "@/lib/measurements/ci-store";
 import { ecoCiArtifactSchema, ecoCiUploadSchema } from "@/lib/measurements/eco-ci-schema.mjs";
 import { authorizePilotUpload, unavailable } from "@/lib/measurements/http";
+import { pilotRepositoryId, pilotRepositoryName } from "@/lib/measurements/pilot.mjs";
 
 export async function POST(request: Request) {
   const authorizationError = authorizePilotUpload(request);
@@ -24,6 +25,10 @@ export async function POST(request: Request) {
   if (!parsed.success) {
     const issues = parsed.error.issues.map(({ path, message }) => ({ path, message }));
     return Response.json({ error: "The Eco CI artifact is invalid.", issues }, { status: 422 });
+  }
+
+  if (parsed.data.repositoryId !== pilotRepositoryId || parsed.data.repository !== pilotRepositoryName) {
+    return Response.json({ error: "This endpoint only accepts CI artifacts for the pilot repository." }, { status: 422 });
   }
 
   try {

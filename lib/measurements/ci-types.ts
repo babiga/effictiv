@@ -10,6 +10,7 @@ export type CiRunSummary = ReturnType<typeof summarizeEcoCiArtifact> & {
   finishedAt: string;
   artifactUrl: string;
   artifactSha256: string;
+  hasStoredArtifact: boolean;
 };
 
 export type CiRunPage = { runs: CiRunSummary[]; nextCursor: string | null };

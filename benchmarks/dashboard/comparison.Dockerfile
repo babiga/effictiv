@@ -8,6 +8,8 @@ COPY package.json package-lock.json ./
 RUN npm ci && node_modules/.bin/playwright-core install --with-deps --only-shell chromium
 COPY fixture.json visit.mjs ./
 USER node
+ENV EFFICTIV_BENCHMARK_MODE=1
+
 CMD ["sleep", "infinity"]
 
 FROM base AS application

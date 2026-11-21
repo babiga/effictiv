@@ -1,0 +1,5 @@
+{
+  "crons": [
+    { "path": "/api/internal/ci-sync", "schedule": "0 4 * * *" }
+  ]
+}

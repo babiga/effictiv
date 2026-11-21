@@ -64,7 +64,7 @@ async function counts() {
 }
 
 async function openMeasurements(page) {
-  await page.goto(`${baseUrl}/dashboard`);
+  await page.goto(`${baseUrl}/pilot`);
   await page.getByRole("button", { name: "Measurements", exact: true }).click();
 }
 

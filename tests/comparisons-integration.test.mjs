@@ -93,7 +93,7 @@ test("Live Benchmarks and trusted publication", async (t) => {
   let sourcePath;
 
   await t.test("live empty state, Demo and rejected uploads", async () => {
-    await page.goto(`${base}/dashboard`);
+    await page.goto(`${base}/pilot`);
     await page.getByRole("button", { name: "Benchmarks", exact: true }).click();
     await page.getByText("No comparisons yet", { exact: true }).waitFor();
     await page.getByRole("button", { name: "Demo", exact: true }).click();
@@ -261,7 +261,7 @@ test("recommendation verification uses registered runs and preserves its event h
   await t.test("Live opens Suggested and Demo dismissal leaves the live hypothesis intact", async () => {
     assert.equal((await read()).status, "suggested");
     assert.deepEqual((await read()).budgets, { "dashboard-landing": 100, "dashboard-scroll": 200 });
-    await page.goto(`${base}/dashboard`);
+    await page.goto(`${base}/pilot`);
     await page.getByRole("button", { name: "Recommendations", exact: true }).click();
     await page.getByText("Defer the Service Energy Profile chart", { exact: true }).waitFor();
     await page.getByText("Suggested", { exact: true }).waitFor();

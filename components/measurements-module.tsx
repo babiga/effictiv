@@ -64,8 +64,9 @@ function exportToCSVHelper(filteredData: typeof mockMeasurements) {
   document.body.removeChild(link);
 }
 
-export function MeasurementsModule() {
+export function MeasurementsModule({ demoOnly = false }: { demoOnly?: boolean }) {
   const [mode, setMode] = React.useState<"live" | "demo">("live");
+  if (demoOnly) return <DemoMeasurements />;
 
   return (
     <>

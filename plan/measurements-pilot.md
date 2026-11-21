@@ -1,6 +1,6 @@
 # Measurements pilot
 
-The Measurements tab opens in Live mode for `babiga/effictiv`. Use Demo to browse the sample dashboard records. Live runs show their collector, completed work, energy scope, and source log. A fresh database has no runs.
+The [public pilot](/pilot) opens Measurements in Live mode for `babiga/effictiv`. Use Demo to browse the sample dashboard records. Live runs show their collector, completed work, energy scope, and source log. A fresh database has no runs.
 
 ## Set up PostgreSQL
 

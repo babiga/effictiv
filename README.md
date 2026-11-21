@@ -251,3 +251,7 @@ Released under the **MIT License**.
 <p align="center">
 Building the future of Green Software, one commit at a time. 🌍💚
 </p>
+
+## Run Effictiv with GitHub
+
+See the [GitHub CI deployment guide](plan/github-ci-setup.md) to configure accounts, repository import, and automatic CI measurements. The [public measurement pilot](https://effictiv.vercel.app/pilot) shows Effictiv's existing measurements and comparisons.

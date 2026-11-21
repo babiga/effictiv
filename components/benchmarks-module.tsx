@@ -14,8 +14,9 @@ import { Button } from "@/components/ui/button";
 import { LiveBenchmarks } from "@/components/live-benchmarks";
 import { mockBenchmarks } from "@/lib/mockData";
 
-export function BenchmarksModule() {
+export function BenchmarksModule({ demoOnly = false }: { demoOnly?: boolean }) {
   const [mode, setMode] = React.useState<"live" | "demo">("live");
+  if (demoOnly) return <DemoBenchmarks />;
 
   return (
     <div className="flex flex-col gap-6 p-4 lg:p-6">
