@@ -47,8 +47,9 @@ Check an item when its evidence is available. Link the implementation PR or acce
    - [x] Verify PostgreSQL, browser, and CSV behavior using smoke and test fixtures. [Integration test](../tests/measurements.test.mjs)
    - [ ] Replay a real GMT energy export and verify its energy, source, and deduplication in Measurements and CSV.
 3. **Compare commits and publish a GitHub summary**
-   - [ ] Implement matched repetitions, the comparison policy, and the GitHub run summary.
-   - [ ] Verify the A/A control, invalid comparison, improvement and regression, and publication replay.
+   - [x] Implement matched repetitions, the comparison policy, and the GitHub run summary. [Comparison setup](comparisons-pilot.md)
+   - [x] Verify the A/A control, invalid comparison, improvement and regression, and publication replay with fixtures. [Policy tests](../tests/comparisons-policy.test.mjs) · [Integration tests](../tests/comparisons-integration.test.mjs)
+   - [ ] Verify the advisory workflow with real A/A and PR captures on the disposable RAPL runner.
 4. **Verify an optimization**
    - [ ] Persist one recommendation, its patch, and its verification comparison.
    - [ ] Verify both dashboard paths against a declared latency budget and publish the evidence trail.

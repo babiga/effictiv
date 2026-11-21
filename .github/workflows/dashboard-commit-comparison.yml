@@ -1,0 +1,137 @@
+name: Dashboard commit energy comparison
+
+on:
+  workflow_dispatch:
+    inputs:
+      pull_request:
+        description: Pull request number in babiga/effictiv
+        required: true
+        type: number
+      control:
+        description: Compare the baseline against itself (A/A control)
+        default: false
+        type: boolean
+
+permissions: {}
+
+concurrency:
+  group: effictiv-dashboard-rapl
+  cancel-in-progress: false
+
+jobs:
+  resolve:
+    if: github.repository == 'babiga/effictiv' && github.ref == 'refs/heads/main' && vars.EFFICTIV_RAPL_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    permissions:
+      pull-requests: read
+    outputs:
+      pr: ${{ steps.pr.outputs.pr }}
+      baseline: ${{ steps.pr.outputs.baseline }}
+      candidate: ${{ steps.pr.outputs.candidate }}
+    steps:
+      - name: Resolve the exact comparison commits
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ inputs.pull_request }}
+          CONTROL: ${{ inputs.control }}
+        run: |
+          set -euo pipefail
+          [[ "$PR" =~ ^[1-9][0-9]{0,8}$ ]]
+          metadata=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR")
+          jq -e --arg pr "$PR" --arg repository 1306723014 '
+            (.number | tostring) == $pr and (.base.repo.id | tostring) == $repository and .base.ref == "main"
+          ' <<<"$metadata" >/dev/null
+          baseline=$(jq -r '.base.sha' <<<"$metadata")
+          candidate=$(jq -r '.head.sha' <<<"$metadata")
+          [[ "$baseline" =~ ^[a-f0-9]{40}$ && "$candidate" =~ ^[a-f0-9]{40}$ ]]
+          if [[ "$CONTROL" == true ]]; then candidate=$baseline; fi
+          printf 'pr=%s\nbaseline=%s\ncandidate=%s\n' "$PR" "$baseline" "$candidate" >>"$GITHUB_OUTPUT"
+
+  capture:
+    needs: resolve
+    runs-on: [self-hosted, linux, x64, effictiv-rapl-disposable]
+    timeout-minutes: 240
+    permissions:
+      contents: read
+    outputs:
+      attempt: ${{ steps.capture.outputs.attempt }}
+      artifact-id: ${{ steps.artifact.outputs.artifact-id }}
+      artifact-digest: ${{ steps.artifact.outputs.artifact-digest }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Capture interleaved dashboard runs
+        id: capture
+        env:
+          BASELINE: ${{ needs.resolve.outputs.baseline }}
+          CANDIDATE: ${{ needs.resolve.outputs.candidate }}
+          PR: ${{ needs.resolve.outputs.pr }}
+          GMT_DIR: ${{ vars.EFFICTIV_RAPL_GMT_DIR || '/opt/green-metrics-tool' }}
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "$BASELINE" "$CANDIDATE"
+          python3 benchmarks/dashboard/collect-comparison.py "$BASELINE" "$CANDIDATE" \
+            "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$PR" "$RUNNER_TEMP/effictiv-comparison.json"
+          printf 'attempt=%s\n' "$GITHUB_RUN_ATTEMPT" >>"$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0cc250532a479d7789f # v6
+        id: artifact
+        with:
+          name: effictiv-comparison-${{ github.run_id }}-${{ steps.capture.outputs.attempt }}
+          path: ${{ runner.temp }}/effictiv-comparison.json
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+
+  publish:
+    needs: [resolve, capture]
+    runs-on: ubuntu-24.04
+    environment: effictiv-comparison-publisher
+    timeout-minutes: 15
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '22.23.5'
+      - name: Verify artifact origin and archive size
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ needs.capture.outputs.artifact-id }}
+          ARTIFACT_DIGEST: ${{ needs.capture.outputs.artifact-digest }}
+          ATTEMPT: ${{ needs.capture.outputs.attempt }}
+        run: |
+          set -euo pipefail
+          [[ "$ARTIFACT_ID" =~ ^[1-9][0-9]*$ && "$ATTEMPT" =~ ^[1-9][0-9]*$ ]]
+          [[ "$ARTIFACT_DIGEST" =~ ^[a-f0-9]{64}$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT_ID" |
+            jq -e --arg run "$GITHUB_RUN_ID" --arg name "effictiv-comparison-$GITHUB_RUN_ID-$ATTEMPT" \
+              --arg digest "sha256:$ARTIFACT_DIGEST" --arg commit "$GITHUB_SHA" '
+                .name == $name and .digest == $digest and .expired == false and .size_in_bytes <= 4198400
+                and (.workflow_run.id | tostring) == $run and .workflow_run.head_sha == $commit
+                and .workflow_run.repository_id == 1306723014 and .workflow_run.head_repository_id == 1306723014
+              ' >/dev/null
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          artifact-ids: ${{ needs.capture.outputs.artifact-id }}
+          path: ${{ runner.temp }}/effictiv-comparison
+      - run: npm ci --ignore-scripts
+      - name: Publish and link the comparison evidence
+        env:
+          EFFICTIV_URL: ${{ vars.EFFICTIV_URL }}
+          EFFICTIV_PILOT_WRITE_TOKEN: ${{ secrets.EFFICTIV_PILOT_WRITE_TOKEN }}
+          ATTEMPT: ${{ needs.capture.outputs.attempt }}
+          PR: ${{ needs.resolve.outputs.pr }}
+          BASELINE: ${{ needs.resolve.outputs.baseline }}
+          CANDIDATE: ${{ needs.resolve.outputs.candidate }}
+        run: |
+          node scripts/publish-comparison.mjs "${RUNNER_TEMP}/effictiv-comparison/effictiv-comparison.json" \
+            "$GITHUB_RUN_ID" "$ATTEMPT" "$PR" "$BASELINE" "$CANDIDATE"

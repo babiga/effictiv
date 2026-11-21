@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { FlameIcon, TrendingUpIcon, TrendingDownIcon, MinusIcon } from "lucide-react";
+import { FlameIcon, TrendingDownIcon } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -10,9 +10,29 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { LiveBenchmarks } from "@/components/live-benchmarks";
 import { mockBenchmarks } from "@/lib/mockData";
 
 export function BenchmarksModule() {
+  const [mode, setMode] = React.useState<"live" | "demo">("live");
+
+  return (
+    <div className="flex flex-col gap-6 p-4 lg:p-6">
+      <div>
+        <h2 className="text-xl tracking-tight">Software Energy Benchmarks</h2>
+        <p className="text-xs text-muted-foreground">Compare dashboard energy across commits.</p>
+      </div>
+      <div className="flex gap-2" role="group" aria-label="Benchmark data mode">
+        <Button size="sm" variant={mode === "live" ? "default" : "outline"} aria-pressed={mode === "live"} onClick={() => setMode("live")}>Live</Button>
+        <Button size="sm" variant={mode === "demo" ? "default" : "outline"} aria-pressed={mode === "demo"} onClick={() => setMode("demo")}>Demo</Button>
+      </div>
+      {mode === "live" ? <LiveBenchmarks /> : <DemoBenchmarks />}
+    </div>
+  );
+}
+
+function DemoBenchmarks() {
   const [selectedType, setSelectedType] = React.useState<string>("all");
 
   const filtered = selectedType === "all"
@@ -32,31 +52,13 @@ export function BenchmarksModule() {
     }
   };
 
-  const getVerdictIcon = (verdict: string) => {
-    switch (verdict) {
-      case "improved":
-        return <TrendingDownIcon className="h-3 w-3 text-emerald-500" />;
-      case "regression":
-        return <TrendingUpIcon className="h-3 w-3 text-rose-500" />;
-      default:
-        return <MinusIcon className="h-3 w-3 text-muted-foreground" />;
-    }
-  };
-
   const getDelta = (after: number, before: number) => {
     if (!before) return 0;
     return Math.round(((after - before) / before) * 100);
   };
 
   return (
-    <div className="flex flex-col gap-6 p-4 lg:p-6 text-xs">
-      <div>
-        <h2 className="text-xl tracking-tight">Software Energy Benchmarks</h2>
-        <p className="text-xs text-muted-foreground">
-          Compare commits, branches, or deployments to prevent energy regressions
-        </p>
-      </div>
-
+    <div className="flex flex-col gap-6 text-xs">
       <div className="flex items-center gap-1 bg-muted p-1 rounded-lg border border-border/40 text-xs self-start">
         {types.map((type) => (
           <button

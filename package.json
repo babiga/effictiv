@@ -10,7 +10,8 @@
     "db:migrate": "node scripts/migrate.mjs",
     "import:ci-run": "node scripts/import-ci-run.mjs",
     "import:run": "node scripts/import-run.mjs",
-    "test:measurements": "node --test tests/measurements.test.mjs"
+    "test:measurements": "node --test tests/measurements.test.mjs",
+    "test:comparisons": "node --test tests/comparisons*.test.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

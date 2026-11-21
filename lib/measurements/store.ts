@@ -1,15 +1,15 @@
 import "server-only";
 
 import { createHash } from "node:crypto";
+import type { PoolClient } from "pg";
 import type { z } from "zod";
 import { database } from "./database";
+import { toWh } from "./energy.mjs";
 import { raplMetric, type uploadSchema } from "./schema.mjs";
 import type { RunSummary } from "./types";
 import { dashboardCachePolicy, saveWebDeliveryEstimate } from "./web-delivery-v1.mjs";
 
 type RunUpload = z.infer<typeof uploadSchema>;
-
-const energyDivisors = { uJ: 3_600_000_000, J: 3600, Wh: 1 };
 
 type Observation = {
   metric: string;
@@ -24,7 +24,7 @@ function observations(result: RunUpload["result"]) {
   const rows: Observation[] = result.energy.readings.map(({ domain, value, unit }) => ({
     metric: raplMetric,
     subject: domain,
-    reading: value / energyDivisors[unit],
+    reading: toWh(value, unit),
     unit: "Wh",
     original_reading: value,
     original_unit: unit,
@@ -44,80 +44,84 @@ function observations(result: RunUpload["result"]) {
 }
 
 export async function insertRun(upload: RunUpload) {
-  const { repositoryId, attempt, repetition, artifactUrl, result } = upload;
-  const { collector, workload, sourceLog, energy } = result;
-  const sourceRunId = result.sourceRunId ?? `sha256:${sourceLog.sha256}`;
-  // Zod emits the fields in schema order so key order in the incoming JSON is immaterial.
-  const payloadDigest = createHash("sha256").update(JSON.stringify(upload)).digest("hex");
-  const identity = [repositoryId, collector.name, sourceRunId, attempt, result.scenario, repetition];
   const client = await database().connect();
   try {
     await client.query("BEGIN ISOLATION LEVEL READ COMMITTED");
-    const scenario = await client.query<{ id: string }>(`
-      INSERT INTO scenarios (repository_id, scenario_key, revision, fixture_sha256, mock_data_sha256, functional_unit)
-      VALUES ($1, $2, $3, $4, $5, $6)
-      ON CONFLICT (repository_id, scenario_key, revision, fixture_sha256, mock_data_sha256)
-      DO UPDATE SET functional_unit = EXCLUDED.functional_unit
-      RETURNING id
-    `, [repositoryId, result.scenario, workload.revision, workload.fixtureSha256, workload.mockDataSha256, result.functionalUnit]);
-
-    const inserted = await client.query<{ id: string }>(`
-      INSERT INTO runs (
-        repository_id, collector, source_run_id, attempt, scenario_key, repetition,
-        scenario_id, collector_version, collector_commit, commit_sha,
-        started_at, finished_at, hardware, cache_policy, browser_version, viewport,
-        completed_visits, failed_visits, assertion, energy_phase, energy_phase_duration_us,
-        energy_coverage, energy_unavailable_reason, source_schema_version, source_url, source_sha256, payload_sha256
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
-        $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27
-      )
-      ON CONFLICT (repository_id, collector, source_run_id, attempt, scenario_key, repetition) DO NOTHING
-      RETURNING id
-    `, [
-      ...identity, scenario.rows[0].id, collector.version, "commit" in collector ? collector.commit : null, result.commitSha,
-      workload.startedAt, workload.finishedAt, result.hardware, workload.cachePolicy, workload.browserVersion, workload.viewport,
-      workload.completedVisits, workload.failedVisits, result.assertion, energy.phase,
-      energy.status === "available" ? energy.phaseDurationUs : null,
-      energy.status === "available" ? energy.coverage : null,
-      energy.status === "unavailable" ? energy.reason : null,
-      result.schemaVersion, artifactUrl, sourceLog.sha256, payloadDigest,
-    ]);
-
-    if (!inserted.rows.length) {
-      // A separate statement sees the committed row after a concurrent uploader wins the unique key.
-      const original = await client.query<{ id: string; payload_sha256: string }>(`
-        SELECT id, payload_sha256 FROM runs
-        WHERE repository_id = $1 AND collector = $2 AND source_run_id = $3 AND attempt = $4
-          AND scenario_key = $5 AND repetition = $6
-      `, identity);
-      await client.query("ROLLBACK");
-      const { id, payload_sha256 } = original.rows[0];
-      return { id, status: payload_sha256 === payloadDigest ? "replayed" : "conflict" } as const;
-    }
-
-    const { id } = inserted.rows[0];
-    const samples = observations(result);
-    await client.query(`
-      INSERT INTO observations (run_id, metric, subject, reading, unit, original_reading, original_unit)
-      SELECT $1, metric, subject, reading, unit, original_reading, original_unit
-      FROM jsonb_to_recordset($2::jsonb) AS rows(
-        metric text, subject text, reading double precision, unit text,
-        original_reading double precision, original_unit text
-      )
-    `, [id, JSON.stringify(samples)]);
-    if (result.assertion === "passed" && workload.cachePolicy === dashboardCachePolicy) {
-      const bytesPerVisit = samples.filter(({ metric }) => metric === "transferred").map(({ original_reading }) => original_reading);
-      await saveWebDeliveryEstimate(client, id, bytesPerVisit);
-    }
-    await client.query("COMMIT");
-    return { id, status: "created" } as const;
+    const outcome = await insertRunInTransaction(client, upload);
+    await client.query(outcome.status === "created" ? "COMMIT" : "ROLLBACK");
+    return outcome;
   } catch (error) {
     await client.query("ROLLBACK").catch(() => undefined);
     throw error;
   } finally {
     client.release();
   }
+}
+
+export async function insertRunInTransaction(client: PoolClient, upload: RunUpload) {
+  const { repositoryId, attempt, repetition, artifactUrl, result } = upload;
+  const { collector, workload, sourceLog, energy } = result;
+  const sourceRunId = result.sourceRunId ?? `sha256:${sourceLog.sha256}`;
+  // Zod emits the fields in schema order so key order in the incoming JSON is immaterial.
+  const payloadDigest = createHash("sha256").update(JSON.stringify(upload)).digest("hex");
+  const identity = [repositoryId, collector.name, sourceRunId, attempt, result.scenario, repetition];
+  const scenario = await client.query<{ id: string }>(`
+    INSERT INTO scenarios (repository_id, scenario_key, revision, fixture_sha256, mock_data_sha256, functional_unit)
+    VALUES ($1, $2, $3, $4, $5, $6)
+    ON CONFLICT (repository_id, scenario_key, revision, fixture_sha256, mock_data_sha256)
+    DO UPDATE SET functional_unit = EXCLUDED.functional_unit
+    RETURNING id
+  `, [repositoryId, result.scenario, workload.revision, workload.fixtureSha256, workload.mockDataSha256, result.functionalUnit]);
+
+  const inserted = await client.query<{ id: string }>(`
+    INSERT INTO runs (
+      repository_id, collector, source_run_id, attempt, scenario_key, repetition,
+      scenario_id, collector_version, collector_commit, commit_sha,
+      started_at, finished_at, hardware, cache_policy, browser_version, viewport,
+      completed_visits, failed_visits, assertion, energy_phase, energy_phase_duration_us,
+      energy_coverage, energy_unavailable_reason, source_schema_version, source_url, source_sha256, payload_sha256
+    ) VALUES (
+      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
+      $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27
+    )
+    ON CONFLICT (repository_id, collector, source_run_id, attempt, scenario_key, repetition) DO NOTHING
+    RETURNING id
+  `, [
+    ...identity, scenario.rows[0].id, collector.version, "commit" in collector ? collector.commit : null, result.commitSha,
+    workload.startedAt, workload.finishedAt, result.hardware, workload.cachePolicy, workload.browserVersion, workload.viewport,
+    workload.completedVisits, workload.failedVisits, result.assertion, energy.phase,
+    energy.status === "available" ? energy.phaseDurationUs : null,
+    energy.status === "available" ? energy.coverage : null,
+    energy.status === "unavailable" ? energy.reason : null,
+    result.schemaVersion, artifactUrl, sourceLog.sha256, payloadDigest,
+  ]);
+
+  if (!inserted.rows.length) {
+    // A separate statement sees the committed row after a concurrent uploader wins the unique key.
+    const original = await client.query<{ id: string; payload_sha256: string }>(`
+      SELECT id, payload_sha256 FROM runs
+      WHERE repository_id = $1 AND collector = $2 AND source_run_id = $3 AND attempt = $4
+        AND scenario_key = $5 AND repetition = $6
+    `, identity);
+    const { id, payload_sha256 } = original.rows[0];
+    return { id, status: payload_sha256 === payloadDigest ? "replayed" : "conflict" } as const;
+  }
+
+  const { id } = inserted.rows[0];
+  const samples = observations(result);
+  await client.query(`
+    INSERT INTO observations (run_id, metric, subject, reading, unit, original_reading, original_unit)
+    SELECT $1, metric, subject, reading, unit, original_reading, original_unit
+    FROM jsonb_to_recordset($2::jsonb) AS rows(
+      metric text, subject text, reading double precision, unit text,
+      original_reading double precision, original_unit text
+    )
+  `, [id, JSON.stringify(samples)]);
+  if (result.assertion === "passed" && workload.cachePolicy === dashboardCachePolicy) {
+    const bytesPerVisit = samples.filter(({ metric }) => metric === "transferred").map(({ original_reading }) => original_reading);
+    await saveWebDeliveryEstimate(client, id, bytesPerVisit);
+  }
+  return { id, status: "created" } as const;
 }
 
 export type RunFilters = { scenario?: string; search?: string };

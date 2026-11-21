@@ -1,17 +1,18 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { setTimeout as delay } from "node:timers/promises";
 import { chromium } from "playwright-core";
 
 const fixtureBytes = readFileSync(new URL("fixture.json", import.meta.url));
 const fixture = JSON.parse(fixtureBytes);
 const fixtureSha256 = createHash("sha256").update(fixtureBytes).digest("hex");
-const mockDataSha256 = createHash("sha256")
+const mockDataSha256 = process.env.EFFICTIV_BENCHMARK_MOCK_DATA_SHA256 ?? createHash("sha256")
   .update(readFileSync(new URL("../../lib/mockData.ts", import.meta.url)))
   .digest("hex");
 const origin = "http://127.0.0.1:3000";
 const timeout = 10_000;
+const summaryFile = process.env.EFFICTIV_BENCHMARK_SUMMARY_FILE;
 
 async function waitForServer() {
   const deadline = performance.now() + 30_000;
@@ -118,7 +119,7 @@ if (path === "wait") {
       try {
         visits.push({ assertion: "passed", ...await visit(browser, path) });
       } catch (error) {
-        visits.push({ assertion: "failed", reason: error.message });
+        visits.push({ assertion: "failed", reason: summaryFile ? "A dashboard visit did not satisfy the benchmark assertions." : error.message });
       }
     }
   } finally {
@@ -126,7 +127,7 @@ if (path === "wait") {
   }
   const completedVisits = visits.filter((entry) => entry.assertion === "passed").length;
   const failedVisits = visits.length - completedVisits;
-  console.log("EFFICTIV_VISITS", JSON.stringify({
+  const summary = JSON.stringify({
     scenario: `dashboard-${path}`,
     revision: fixture.revision,
     fixtureSha256,
@@ -140,6 +141,8 @@ if (path === "wait") {
     completedVisits,
     failedVisits,
     visits,
-  }));
+  });
+  if (summaryFile) writeFileSync(summaryFile, summary);
+  else console.log("EFFICTIV_VISITS", summary);
   if (failedVisits) process.exitCode = 1;
 }
