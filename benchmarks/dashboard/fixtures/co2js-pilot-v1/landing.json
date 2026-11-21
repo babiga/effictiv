@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "commitSha": "6db0fa10c0ec54897f572eda76d2fb5db8460186",
+  "scenario": "dashboard-landing",
+  "functionalUnit": "one completed dashboard visit",
+  "assertion": "passed",
+  "hardware": {
+    "architecture": "x86_64",
+    "cpuModel": "AMD EPYC 9V74 80-Core Processor",
+    "logicalCpusAvailable": 3,
+    "kernelRelease": "6.18.57",
+    "raplMsrDevicePresent": false
+  },
+  "collector": {
+    "name": "Playwright",
+    "version": "1.58.2"
+  },
+  "sourceRunId": null,
+  "sourceLog": {
+    "name": "landing.log",
+    "sha256": "f72abcfdabf4d979d16bbe7e19d1f2cde92d952ce6b23bdb57d7ea008219cdb3"
+  },
+  "workload": {
+    "scenario": "dashboard-landing",
+    "revision": 1,
+    "fixtureSha256": "5c635f915e2c5d3358fe32ca918f6da41faa095c7a6bc4c42a3527b62b19e62f",
+    "mockDataSha256": "b5bf774c7b736d547279aadc0cdaf948c161949f3fa4ac3a73eab92c795f886b",
+    "browserVersion": "145.0.7632.6",
+    "viewport": {
+      "width": 1440,
+      "height": 800
+    },
+    "cachePolicy": "fresh-browser-context-per-visit",
+    "startedAt": "2026-11-21T19:27:05.533Z",
+    "finishedAt": "2026-11-21T19:27:07.778Z",
+    "assertion": "passed",
+    "completedVisits": 3,
+    "failedVisits": 0,
+    "visits": [
+      {
+        "assertion": "passed",
+        "timeToUsableMs": 737,
+        "timeToAssertionMs": 737,
+        "transferredBytes": 557935
+      },
+      {
+        "assertion": "passed",
+        "timeToUsableMs": 601,
+        "timeToAssertionMs": 601,
+        "transferredBytes": 557935
+      },
+      {
+        "assertion": "passed",
+        "timeToUsableMs": 614,
+        "timeToAssertionMs": 614,
+        "transferredBytes": 557935
+      }
+    ]
+  },
+  "energy": {
+    "status": "unavailable",
+    "metric": "cpu_energy_rapl_msr_component",
+    "phase": "Dashboard visits",
+    "readings": [],
+    "reason": "Energy collection is disabled in functional mode."
+  }
+}
