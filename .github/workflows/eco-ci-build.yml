@@ -39,6 +39,7 @@ jobs:
         id: install
         run: npm ci
       - uses: green-coding-solutions/eco-ci-energy-estimation@782dd4a31bc426a6ae26a7b08d89af454b10ffc0 # v5.3.0
+        id: install-sample
         if: ${{ !cancelled() && steps.eco-ci.outcome == 'success' && steps.install.outcome != 'skipped' }}
         continue-on-error: true
         with:
@@ -51,6 +52,7 @@ jobs:
         env:
           NEXT_TELEMETRY_DISABLED: '1'
       - uses: green-coding-solutions/eco-ci-energy-estimation@782dd4a31bc426a6ae26a7b08d89af454b10ffc0 # v5.3.0
+        id: build-sample
         if: ${{ !cancelled() && steps.eco-ci.outcome == 'success' && steps.build.outcome != 'skipped' }}
         continue-on-error: true
         with:
@@ -65,6 +67,9 @@ jobs:
           ECO_CI_JOB_ID: ${{ job.check_run_id }}
           ECO_CI_INSTALL_OUTCOME: ${{ steps.install.outcome }}
           ECO_CI_BUILD_OUTCOME: ${{ steps.build.outcome }}
+          ECO_CI_INITIALIZE_OUTCOME: ${{ steps.eco-ci.outcome }}
+          ECO_CI_INSTALL_SAMPLE_OUTCOME: ${{ steps.install-sample.outcome }}
+          ECO_CI_BUILD_SAMPLE_OUTCOME: ${{ steps.build-sample.outcome }}
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         if: ${{ !cancelled() && steps.capture.outcome == 'success' }}
         with:

@@ -49,6 +49,11 @@ const artifact = {
   startedAt,
   finishedAt,
   outcomes: { install: process.env.ECO_CI_INSTALL_OUTCOME, build: process.env.ECO_CI_BUILD_OUTCOME },
+  collectorOutcomes: {
+    initialize: process.env.ECO_CI_INITIALIZE_OUTCOME,
+    install: process.env.ECO_CI_INSTALL_SAMPLE_OUTCOME,
+    build: process.env.ECO_CI_BUILD_SAMPLE_OUTCOME,
+  },
   lapData,
   totalSamplesJoules,
 };
