@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { evaluateComparison } from "../lib/comparisons/policy.mjs";
+import { evaluateVerification } from "../lib/recommendations/policy.mjs";
 import { comparisonUploadSchema } from "../lib/comparisons/schema.mjs";
 import { comparisonUpload, evidence } from "./comparison-fixtures.mjs";
 
@@ -69,4 +70,41 @@ test("validation rejects tampering, duplicate source runs, and incorrect assignm
   const wrongCommit = comparisonUpload();
   wrongCommit.scenarios[0].comparison[0].candidate.result.commitSha = wrongCommit.baselineSha;
   assert.equal(comparisonUploadSchema.safeParse(wrongCommit).success, false);
+});
+
+test("optimization policy checks nearest-rank p95, eligibility and both latency budgets", () => {
+  const budgets = { "dashboard-landing": 100, "dashboard-scroll": 200 };
+  const landing = {
+    ...evaluate(evidence("landing")), id: "landing", scenario: "dashboard-landing",
+    baselineSamples: Array(180).fill(1000),
+    candidateSamples: [...Array(171).fill(1100), ...Array(9).fill(5000)],
+  };
+  const scroll = {
+    ...evaluate(evidence("scroll", 100, [100, 100, 101, 100, 100, 101])), id: "scroll", scenario: "dashboard-scroll",
+    baselineSamples: Array(180).fill(1500),
+    candidateSamples: Array(180).fill(1700),
+  };
+  const passing = evaluateVerification(landing, scroll, budgets);
+  assert.equal(passing.status, "verified");
+  assert.equal(passing.landing.latency.candidateP95Ms, 1100);
+  assert.equal(passing.scroll.energy.upperWhPerVisit, passing.scroll.energy.thresholdWhPerVisit);
+
+  const noisy = evaluateVerification({ ...landing, verdict: "inconclusive" }, scroll, budgets);
+  assert.equal(noisy.status, "inconclusive");
+  assert.match(noisy.reasons[0], /Landing did not show/);
+
+  const slow = evaluateVerification({ ...landing, candidateSamples: Array(180).fill(1101) },
+    { ...scroll, candidateSamples: Array(180).fill(1701) }, budgets);
+  assert.deepEqual(slow.reasons, [
+    "Landing p95 exceeded the latency budget by 1 ms.", "Scroll p95 exceeded the latency budget by 1 ms.",
+  ]);
+
+  const missing = evaluateVerification(landing, {
+    ...scroll, verdict: "ineligible", reason: "A dashboard correctness assertion failed.", metrics: null,
+    candidateSamples: scroll.candidateSamples.slice(1),
+  }, budgets);
+  assert.equal(missing.status, "inconclusive");
+  assert.match(missing.reasons[0], /correctness assertion failed/);
+  assert.match(missing.reasons[1], /latency samples/);
+  assert.equal(missing.scroll.latency.deltaMs, null);
 });

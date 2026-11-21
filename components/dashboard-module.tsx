@@ -50,14 +50,12 @@ import {
 interface DashboardModuleProps {
   timeRange: string;
   environment: string;
-  appliedCount: number;
   onNavigate: (tab: string) => void;
 }
 
 export function DashboardModule({
   timeRange,
   environment,
-  appliedCount,
   onNavigate,
 }: DashboardModuleProps) {
   const filteredApps = mockApplications.filter(
@@ -353,7 +351,7 @@ export function DashboardModule({
         <Card className="border-emerald-500/20 bg-emerald-500/[0.03] shadow-sm transition-all duration-200 hover:border-emerald-500/40 dark:bg-emerald-500/[0.02]">
           <CardHeader>
             <CardDescription className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-              <span>Energy Reduction Potential</span>
+              <span>Demo energy reduction estimate</span>
               <ZapIcon className="h-4 w-4 animate-pulse text-emerald-500" />
             </CardDescription>
             <CardTitle className="text-2xl tabular-nums tracking-tight text-emerald-600 dark:text-emerald-400">

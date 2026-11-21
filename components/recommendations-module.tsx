@@ -12,20 +12,33 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { LiveRecommendations } from "@/components/live-recommendations";
 import { mockRecommendations, Recommendation } from "@/lib/mockData";
 import { toast } from "sonner";
 
 interface RecommendationsModuleProps {
-  onApply: () => void;
   dismissedIds: string[];
   onDismiss: (id: string) => void;
 }
 
-export function RecommendationsModule({
-  onApply,
-  dismissedIds,
-  onDismiss,
-}: RecommendationsModuleProps) {
+export function RecommendationsModule(props: RecommendationsModuleProps) {
+  const [mode, setMode] = React.useState<"live" | "demo">("live");
+
+  return (
+    <div className="flex flex-col gap-4 p-4 lg:p-6">
+      <h2 className="text-xl tracking-tight">Optimization Recommendations</h2>
+      <div className="flex gap-2" role="group" aria-label="Recommendation data mode">
+        <Button size="sm" variant={mode === "live" ? "default" : "outline"} aria-pressed={mode === "live"}
+          onClick={() => setMode("live")}>Live</Button>
+        <Button size="sm" variant={mode === "demo" ? "default" : "outline"} aria-pressed={mode === "demo"}
+          onClick={() => setMode("demo")}>Demo</Button>
+      </div>
+      {mode === "live" ? <LiveRecommendations /> : <DemoRecommendations {...props} />}
+    </div>
+  );
+}
+
+function DemoRecommendations({ dismissedIds, onDismiss }: RecommendationsModuleProps) {
   const [recommendations, setRecommendations] =
     React.useState<Recommendation[]>(mockRecommendations);
   const [applyingId, setApplyingId] = React.useState<string | null>(null);
@@ -40,7 +53,6 @@ export function RecommendationsModule({
         prev.map((r) => (r.id === id ? { ...r, status: "Applied" } : r)),
       );
       setApplyingId(null);
-      onApply(); // Notify parent to update potential savings KPIs
       toast.success(`Applied optimization: ${title}`);
     }, 1200);
   };
@@ -56,7 +68,7 @@ export function RecommendationsModule({
     (r) => r.status === "Active" && !dismissedIds.includes(r.id),
   );
   const appliedRecommendations = recommendations.filter(
-    (r) => r.status === "Applied" || dismissedIds.includes(r.id), // count dismissed as complete/hidden for simulation
+    (r) => r.status === "Applied",
   );
 
   const getCategoryBadgeClass = (category: string) => {
@@ -88,19 +100,10 @@ export function RecommendationsModule({
   };
 
   return (
-    <div className="flex flex-col gap-6 p-4 lg:p-6 text-xs">
+    <div className="flex flex-col gap-6 text-xs">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl  tracking-tight">
-            AI Optimization Recommendations
-          </h2>
-          <p className="text-xs text-muted-foreground">
-            Get actionable recommendations backed by runtime profiling
-            statistics to optimize software carbon footprint and reduce cloud
-            overhead
-          </p>
-        </div>
+        <p className="text-muted-foreground">Sample recommendations and savings estimates.</p>
         <Badge
           variant="outline"
           className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 py-1 shrink-0 self-start md:self-auto "
@@ -214,11 +217,10 @@ export function RecommendationsModule({
           <div className="col-span-full py-12 flex flex-col items-center justify-center text-center border border-dashed rounded-lg bg-card">
             <CheckCircle2Icon className="h-10 w-10 text-emerald-500 mb-3" />
             <h3 className="font-semibold text-sm">
-              All optimizations applied!
+              No demo recommendations left
             </h3>
             <p className="text-xs text-muted-foreground max-w-sm mt-1">
-              Your microservice energy usage is operating within optimal bounds.
-              No pending regressions.
+              Switch to Live to see measured optimization results.
             </p>
           </div>
         )}
@@ -248,7 +250,7 @@ export function RecommendationsModule({
                   </span>
                 </div>
                 <span className="font-mono text-[10px] text-emerald-500 ">
-                  Saved ${rec.estimatedSavingsCost}/mo ·{" "}
+                  Estimated ${rec.estimatedSavingsCost}/mo ·{" "}
                   {rec.estimatedSavingskWh} kWh
                 </span>
               </div>

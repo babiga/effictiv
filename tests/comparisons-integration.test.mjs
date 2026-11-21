@@ -204,3 +204,147 @@ test("Live Benchmarks and trusted publication", async (t) => {
 
   await page.close();
 });
+
+test("recommendation verification uses registered runs and preserves its event history", async (t) => {
+  await db.query("INSERT INTO projects (repository_id, repository_name, is_public) VALUES (2, 'example/other', true) ON CONFLICT DO NOTHING");
+  const listPath = api.replace(/comparisons$/, "recommendations");
+  const writePath = `${listPath}/defer-service-energy-profile/events`;
+  const event = (body, path = writePath, credential = token) => fetch(`${base}${path}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${credential}`, "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const read = async () => {
+    const response = await get(listPath);
+    assert.equal(response.status, 200, logs);
+    const { recommendations } = await response.json();
+    return recommendations[0];
+  };
+  const makeCapture = (runId, startedAt, scrollEnergy = [100, 100, 100, 100, 100, 100], attempt = 1) => {
+    const fixture = comparisonUpload(runId);
+    fixture.attempt = attempt;
+    fixture.runnerId = `run-${runId}-attempt-${attempt}`;
+    for (const scenario of fixture.scenarios) {
+      const scroll = scenario.scenario === "dashboard-scroll";
+      for (const pair of [...scenario.calibration, ...scenario.comparison]) {
+        for (const side of ["baseline", "candidate"]) {
+          const workload = pair[side].result.workload;
+          workload.startedAt = startedAt;
+          workload.finishedAt = new Date(Date.parse(startedAt) + 60_000).toISOString();
+          const candidate = side === "candidate" && scenario.comparison.includes(pair);
+          for (const visit of workload.visits) {
+            visit.timeToUsableMs = candidate ? 1_100 : 1_000;
+            visit.timeToAssertionMs = scroll ? (candidate ? 1_700 : 1_500) : visit.timeToUsableMs;
+          }
+        }
+      }
+      if (scroll) scenario.comparison.forEach((pair, index) => {
+        pair.candidate.result.energy.readings[0].value = scrollEnergy[index] * 30;
+      });
+    }
+    return fixture;
+  };
+  const publish = async (fixture) => {
+    const response = await upload(fixture);
+    assert.equal(response.status, 201, await response.clone().text());
+    const { comparisons } = await response.json();
+    return {
+      type: "verify",
+      landingComparisonId: comparisons.find(({ scenario }) => scenario === "dashboard-landing").id,
+      scrollComparisonId: comparisons.find(({ scenario }) => scenario === "dashboard-scroll").id,
+    };
+  };
+  const page = await browser.newPage();
+  let registration;
+  let passing;
+
+  await t.test("Live opens Suggested and Demo dismissal leaves the live hypothesis intact", async () => {
+    assert.equal((await read()).status, "suggested");
+    assert.deepEqual((await read()).budgets, { "dashboard-landing": 100, "dashboard-scroll": 200 });
+    await page.goto(`${base}/dashboard`);
+    await page.getByRole("button", { name: "Recommendations", exact: true }).click();
+    await page.getByText("Defer the Service Energy Profile chart", { exact: true }).waitFor();
+    await page.getByText("Suggested", { exact: true }).waitFor();
+    await page.getByRole("button", { name: "Demo", exact: true }).click();
+    const dismiss = page.getByRole("button", { name: "Dismiss", exact: true });
+    const beforeDismiss = await dismiss.count();
+    await dismiss.first().click();
+    assert.equal(await dismiss.count(), beforeDismiss - 1);
+    await page.getByRole("button", { name: "Live", exact: true }).click();
+    await page.getByText("Suggested", { exact: true }).waitFor();
+    assert.equal((await read()).history.length, 0);
+  });
+
+  await t.test("trusted registration is scoped and concurrent replays create one event", async () => {
+    const earlier = makeCapture("12401", "2026-01-01T00:00:00.000Z");
+    const earlierEvidence = await publish(earlier);
+    assert.equal((await event(earlierEvidence)).status, 409);
+
+    const implementation = { type: "implement", pullRequest: earlier.pullRequest,
+      baselineSha: earlier.baselineSha, implementationSha: earlier.candidateSha };
+    assert.equal((await event(implementation, writePath, "incorrect")).status, 401);
+    assert.equal((await event(implementation, writePath.replace(pilotRepositoryId, "2"))).status, 404);
+    const responses = await Promise.all([event(implementation), event(implementation)]);
+    assert.deepEqual(responses.map(({ status }) => status).sort(), [200, 201]);
+    const [first, second] = await Promise.all(responses.map((response) => response.json()));
+    assert.deepEqual(first, second);
+    registration = first.event.createdAt;
+
+    assert.equal((await event({ ...implementation, pullRequest: implementation.pullRequest + 1 })).status, 409);
+    assert.equal((await event(earlierEvidence)).status, 409);
+    assert.equal((await read()).status, "implemented");
+    assert.equal((await read()).history.length, 1);
+    assert.deepEqual(await (await get(listPath.replace(pilotRepositoryId, "2"))).json(), { recommendations: [] });
+  });
+
+  await t.test("only matching attempts with bounded scroll energy and passing latency verify", async () => {
+    const retry = await publish(makeCapture("12402", registration, [97, 100, 100, 100, 100, 103], 2));
+    passing = await publish(makeCapture("12402", registration));
+    assert.equal((await event({ ...passing, scrollComparisonId: retry.scrollComparisonId })).status, 409);
+
+    const wrongCommit = makeCapture("12403", registration);
+    wrongCommit.candidateSha = "c".repeat(40);
+    for (const scenario of wrongCommit.scenarios) {
+      for (const pair of scenario.comparison) pair.candidate.result.commitSha = wrongCommit.candidateSha;
+    }
+    assert.equal((await event(await publish(wrongCommit))).status, 409);
+
+    const adverse = await event(retry);
+    assert.equal(adverse.status, 201, await adverse.clone().text());
+    const { event: adverseEvent } = await adverse.json();
+    assert.equal(adverseEvent.status, "inconclusive");
+    assert.equal(adverseEvent.verification.scroll.verdict, "inconclusive");
+    assert.match(adverseEvent.verification.reasons[0], /calibrated threshold/);
+
+    const success = await event(passing);
+    assert.equal(success.status, 201, await success.clone().text());
+    const { event: verified } = await success.json();
+    assert.equal(verified.status, "verified");
+    assert.deepEqual(verified.verification.landing.latency, {
+      metric: "time_to_usable", baselineP95Ms: 1000, candidateP95Ms: 1100, deltaMs: 100, budgetMs: 100,
+    });
+    assert.deepEqual(verified.verification.scroll.latency, {
+      metric: "time_to_assertion", baselineP95Ms: 1500, candidateP95Ms: 1700, deltaMs: 200, budgetMs: 200,
+    });
+    assert.equal((await event(retry)).status, 200);
+    assert.equal((await read()).status, "verified");
+  });
+
+  await t.test("browser links evidence and terminal dismissal retains previous results", async () => {
+    await page.reload();
+    await page.getByRole("button", { name: "Recommendations", exact: true }).click();
+    await page.getByText("Verified", { exact: true }).waitFor();
+    assert.equal(await page.getByRole("link", { name: "Landing comparison", exact: true }).getAttribute("href"),
+      `/dashboard/comparisons/${passing.landingComparisonId}`);
+    await page.getByText("P95 time to scroll assertion", { exact: true }).filter({ visible: true }).waitFor();
+
+    assert.equal((await event({ type: "dismiss" })).status, 201);
+    assert.equal((await event({ type: "dismiss" })).status, 200);
+    const result = await read();
+    assert.equal(result.status, "dismissed");
+    assert.deepEqual(result.history.map(({ status }) => status), ["dismissed", "verified", "inconclusive", "implemented"]);
+    assert.equal((await event(passing)).status, 200);
+    assert.equal((await read()).status, "dismissed");
+  });
+  await page.close();
+});

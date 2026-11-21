@@ -47,7 +47,7 @@ export function EnhancedRecommendationsSection({
         <div className="flex items-center gap-2">
           <LightbulbIcon className="h-4 w-4 text-amber-500" />
           <h3 className="text-base font-semibold">
-            Optimization Opportunities
+            Demo Optimization Opportunities
           </h3>
         </div>
         <Button
