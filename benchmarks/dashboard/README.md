@@ -34,6 +34,25 @@ benchmarks/dashboard/run.sh smoke "$(mktemp -d)/dashboard" 3
 
 Functional mode reports energy as `unavailable`. GMT mode uses a functional-only GMT run if `/dev/cpu/0/msr` is absent. An installed GMT run with no RAPL totals also reports `unavailable` with a reason. A collected zero remains a numeric reading.
 
+For a host-side browser check, install Node.js 22 or later and Playwright's Chromium system dependencies. From the repository root, build and start the same fixture using the app lockfile.
+
+```bash
+npm ci
+npm ci --prefix benchmarks/dashboard
+benchmarks/dashboard/node_modules/.bin/playwright-core install chromium --only-shell
+export TZ=UTC NEXT_TELEMETRY_DISABLED=1
+NEXT_PUBLIC_EFFICTIV_BENCHMARK_DATE="$(node -p 'require("./benchmarks/dashboard/fixture.json").date')" npm run build
+npm run start -- --hostname 127.0.0.1 --port 3000
+```
+
+In a second shell at the repository root, run the two browser checks.
+
+```bash
+node benchmarks/dashboard/visit.mjs wait
+node benchmarks/dashboard/visit.mjs landing 3
+node benchmarks/dashboard/visit.mjs scroll 3
+```
+
 ## Read and retain the artifacts
 
 - Each path writes a versioned `.json` result and its original `.log` to the output directory. The JSON contains the source commit, fixture digests, collector version, hardware profile, assertion outcome, completed and failed counts, and original energy readings. The raw log contains GMT's phase-stat rows and browser output. Its SHA-256 is in the result.
@@ -43,6 +62,6 @@ Functional mode reports energy as `unavailable`. GMT mode uses a functional-only
 
 ## First run status
 
-The cloud runner exposes no RAPL MSR devices. The real-energy acceptance check and sanitized GMT energy fixture are pending a compatible runner. The committed smoke fixture records the browser checks and the unavailable energy reading.
+Both paths completed three of three visits in the host-side check. The [smoke results](fixtures/smoke-v1/) preserve the browser output and mark energy as `unavailable`. The cloud runner exposes no RAPL MSR devices. The real-energy acceptance check and sanitized GMT energy fixture are pending a compatible runner.
 
 On `218b033`, `npm ci` and `npm run build` passed. `npm run lint` reported four errors and 22 warnings. The errors are pre-existing explicit `any` types in `components/deployments-module.tsx` and `components/site-header.tsx`.
