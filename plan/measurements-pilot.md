@@ -29,6 +29,14 @@ The final arguments are the source attempt and scenario repetition. Both default
 
 `GET /api/v1/projects/1306723014/runs` accepts optional `scenario`, `search`, `limit`, and `cursor` parameters. The response contains `runs` and `nextCursor`. Use `format=csv` with the same filters and omit `cursor` to download all matching runs. Stored energy is in Wh. The original package units and readings remain available alongside it. A blank energy value means the collector reported energy unavailable.
 
+## Web delivery estimates
+
+Live Measurements shows gCO₂e per visit for passing dashboard runs with a complete set of transfer readings. The `webDeliveryEstimate` object and CSV include modeled total and per-visit emissions, exact transferred bytes, the CO2.js and model versions, and the assumptions. The benchmark counts response headers and encoded bodies for loopback requests that finish by the scenario’s last assertion. It opens a fresh browser context for each visit. [Benchmark methodology](../benchmarks/dashboard/README.md)
+
+CO2.js `0.19.0` applies Sustainable Web Design v4 to each visit’s bytes using the global grid factor of 494 gCO₂e/kWh and a green hosting factor of zero. The model includes operational and embodied emissions for the network, data center, and visitor device. It uses lab transfers as a proxy for web delivery and estimates emissions even when CPU energy is unavailable. Its device and data-center boundaries can overlap measured CPU activity, so the UI reports the estimate alongside the separate Wh reading. [CO2.js v0.19.0](https://github.com/thegreenwebfoundation/co2.js/tree/v0.19.0)
+
+For an existing pilot, pause the trusted uploader and let in-flight imports finish. Run `npm run db:migrate` against the pilot database, deploy the updated app, then resume uploads. The migration backfills passing historical runs with complete byte observations. After rollout, replay a known upload and confirm it returns the same run ID and shows one estimate in Live Measurements and CSV.
+
 ## Verify locally
 
 Use a disposable PostgreSQL database. The integration suite creates and removes its own schema. It uses the captured Playwright smoke artifacts for replay and synthetic RAPL readings for unit conversion, measured zero, and failing assertions.

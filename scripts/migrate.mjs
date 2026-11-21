@@ -2,7 +2,7 @@ import { readdir, readFile } from "node:fs/promises";
 import { Client } from "pg";
 
 const migrations = new URL("../db/migrations/", import.meta.url);
-const files = (await readdir(migrations)).filter((name) => /^\d+-.+\.sql$/.test(name)).sort();
+const files = (await readdir(migrations)).filter((name) => /^\d+-.+\.(sql|mjs)$/.test(name)).sort();
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) throw new Error("Set DATABASE_URL to the Effictiv PostgreSQL database");
 
@@ -21,7 +21,13 @@ try {
   const applied = new Set(rows.map(({ name }) => name));
   const pending = files.filter((name) => !applied.has(name));
   for (const name of pending) {
-    await client.query(await readFile(new URL(name, migrations), "utf8"));
+    const file = new URL(name, migrations);
+    if (name.endsWith(".sql")) {
+      await client.query(await readFile(file, "utf8"));
+    } else {
+      const { migrate } = await import(file.href);
+      await migrate(client);
+    }
     await client.query("INSERT INTO effictiv_schema_migrations (name) VALUES ($1)", [name]);
   }
   await client.query("COMMIT");

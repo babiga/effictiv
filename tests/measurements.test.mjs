@@ -58,7 +58,8 @@ async function counts() {
   const { rows } = await db.query(`SELECT
     (SELECT count(*) FROM scenarios) AS scenarios,
     (SELECT count(*) FROM runs) AS runs,
-    (SELECT count(*) FROM observations) AS observations`);
+    (SELECT count(*) FROM observations) AS observations,
+    (SELECT count(*) FROM web_delivery_estimates) AS estimates`);
   return rows[0];
 }
 
@@ -116,7 +117,7 @@ after(async () => {
 
 test("live Measurements, trusted upload, and export", async (t) => {
   const smoke = await fixture("landing");
-  const page = await browser.newPage({ acceptDownloads: true });
+  const page = await browser.newPage({ acceptDownloads: true, locale: "en-US" });
   const table = page.getByRole("table", { name: "Measurement runs" });
 
   await t.test("fresh live project and rejected uploads", async () => {
@@ -127,7 +128,7 @@ test("live Measurements, trusted upload, and export", async (t) => {
     assert.equal((await upload(badUnit)).status, 422);
     assert.equal((await upload(smoke, "incorrect-token")).status, 401);
     assert.equal((await upload({ ...smoke, repositoryId: "2" })).status, 422);
-    assert.deepEqual(await counts(), { scenarios: "0", runs: "0", observations: "0" });
+    assert.deepEqual(await counts(), { scenarios: "0", runs: "0", observations: "0", estimates: "0" });
   });
 
   let importedId;
@@ -145,7 +146,7 @@ test("live Measurements, trusted upload, and export", async (t) => {
     const changed = structuredClone(smoke);
     changed.result.workload.revision++;
     assert.equal((await upload(changed)).status, 409);
-    assert.deepEqual(await counts(), { scenarios: "1", runs: "1", observations: "9" });
+    assert.deepEqual(await counts(), { scenarios: "1", runs: "1", observations: "9", estimates: "1" });
 
     const directory = await mkdtemp(join(tmpdir(), "effictiv-log-check-"));
     try {
@@ -160,11 +161,27 @@ test("live Measurements, trusted upload, and export", async (t) => {
     }
   });
 
-  await t.test("one UI row and one CSV row after reload, with Demo and retry available", async () => {
+  await t.test("one modeled estimate in the API, UI, and CSV, with Demo and retry available", async () => {
+    const { runs: [run] } = await (await runs()).json();
+    const estimate = run.webDeliveryEstimate;
+    assert.equal(run.energyWh, null);
+    assert.equal(estimate.transferredBytes, "1667091");
+    assert.ok(Math.abs(estimate.gramsCo2ePerVisit - 0.0823542954) < 1e-12);
+    assert.ok(Math.abs(estimate.totalGramsCo2e - 0.2470628862) < 1e-12);
+    assert.equal(estimate.estimatorVersion, "0.19.0");
+    assert.equal(estimate.modelVersion, 4);
+    assert.equal(estimate.assumptions.gridIntensityGramsCo2ePerKwh, 494);
+    assert.equal(estimate.assumptions.greenHostingFactor, 0);
+
     await openMeasurements(page);
     await table.waitFor();
     assert.equal(await table.getByRole("row").count(), 2);
     await table.getByText("Unavailable", { exact: true }).waitFor();
+    await table.getByRole("columnheader", { name: "Estimated web delivery" }).waitFor();
+    await table.getByText("0.0823543 gCO₂e/visit", { exact: true }).waitFor();
+    await table.getByText("Model details", { exact: true }).click();
+    await table.getByText("CO2.js 0.19.0 · Sustainable Web Design v4", { exact: true }).waitFor();
+    await table.getByText("Grid intensity (global) 494 gCO₂e/kWh", { exact: true }).waitFor();
     assert.equal(await table.getByRole("link", { name: "Collector log" }).getAttribute("href"), smoke.artifactUrl);
     const [download] = await Promise.all([
       page.waitForEvent("download"), page.getByRole("link", { name: "Export CSV" }).click(),
@@ -172,6 +189,11 @@ test("live Measurements, trusted upload, and export", async (t) => {
     const csv = (await readFile(await download.path(), "utf8")).trimEnd().split("\r\n");
     assert.equal(csv.length, 2);
     assert.ok(csv[1].startsWith(`"${importedId}"`));
+    assert.ok(csv[0].includes('"Estimated web delivery (gCO₂e/visit)"'));
+    assert.ok(csv[1].endsWith([
+      estimate.totalGramsCo2e, estimate.gramsCo2ePerVisit, '"1667091"', '"0.19.0"', 4, '"global"', 494, 0,
+      '"fresh-browser-context-per-visit"', `"${estimate.assumptions.boundary}"`,
+    ].join(",")));
 
     await page.getByRole("button", { name: "Demo", exact: true }).click();
     await page.getByText("Granular Measurements Log", { exact: true }).waitFor();
@@ -188,13 +210,15 @@ test("live Measurements, trusted upload, and export", async (t) => {
     assert.equal(await table.getByRole("row").count(), 2);
   });
 
-  await t.test("observations preserve units, measured zero, and failed-task status", async () => {
+  await t.test("energy and web delivery preserve zero and failed-task status independently", async () => {
     const measured = await syntheticEnergy([
       { domain: "Package_0", value: 3_600_000_000, unit: "uJ" },
       { domain: "Package_1", value: 3600, unit: "J" },
       { domain: "Package_2", value: 1, unit: "Wh" },
     ]);
     const zero = await syntheticEnergy([{ domain: "Package_0", value: 0, unit: "uJ" }]);
+    measured.result.workload.visits.forEach((visit, index) => { visit.transferredBytes = (index + 1) * 1_000_000_000; });
+    zero.result.workload.visits.forEach((visit) => { visit.transferredBytes = 0; });
     const failed = await syntheticEnergy([{ domain: "Package_0", value: 3600, unit: "J" }]);
     failed.result.assertion = failed.result.workload.assertion = "failed";
     failed.result.workload.failedVisits = 1;
@@ -209,11 +233,17 @@ test("live Measurements, trusted upload, and export", async (t) => {
     assert.equal(find(measured).energyWh, 3);
     assert.equal(find(measured).energyWhPerVisit, 1);
     assert.deepEqual(find(measured).energyReadings, measured.result.energy.readings);
+    assert.equal(find(measured).webDeliveryEstimate.transferredBytes, "6000000000");
+    assert.ok(Math.abs(find(measured).webDeliveryEstimate.totalGramsCo2e - 889.2) < 1e-12);
+    assert.ok(Math.abs(find(measured).webDeliveryEstimate.gramsCo2ePerVisit - 296.4) < 1e-12);
     assert.equal(find(zero).energyWh, 0);
     assert.equal(find(zero).energyWhPerVisit, 0);
+    assert.equal(find(zero).webDeliveryEstimate.gramsCo2ePerVisit, 0);
+    assert.equal(find(zero).webDeliveryEstimate.transferredBytes, "0");
     assert.equal(find(failed).energyWh, 1);
     assert.equal(find(failed).energyWhPerVisit, null);
     assert.equal(find(failed).failedVisits, 1);
+    assert.equal(find(failed).webDeliveryEstimate, null);
   });
 
   await t.test("read filters, cursor pagination and CSV share the same run set", async () => {
@@ -249,26 +279,51 @@ test("live Measurements, trusted upload, and export", async (t) => {
     assert.equal((await runs("", "3")).status, 404);
   });
 
-  await t.test("a failed observation insert rolls back the run and can be retried", async () => {
+  await t.test("failed observation and estimate inserts roll back the run and can be retried", async () => {
     const payload = structuredClone(smoke);
     payload.attempt = 2;
     payload.result.workload.revision++;
     const previous = await counts();
     await db.query(`
-      CREATE FUNCTION reject_observation() RETURNS trigger LANGUAGE plpgsql AS $$
-      BEGIN RAISE EXCEPTION 'test observation insert failure'; END; $$;
-      CREATE TRIGGER reject_observation BEFORE INSERT ON observations
-        FOR EACH ROW EXECUTE FUNCTION reject_observation();
+      CREATE FUNCTION reject_insert() RETURNS trigger LANGUAGE plpgsql AS $$
+      BEGIN RAISE EXCEPTION 'test insert failure'; END; $$;
     `);
-    try {
-      const response = await upload(payload);
-      assert.equal(response.status, 503);
-      assert.equal(response.headers.get("Retry-After"), "5");
-      assert.deepEqual(await counts(), previous);
-    } finally {
-      await db.query("DROP TRIGGER reject_observation ON observations; DROP FUNCTION reject_observation()");
+    for (const tableName of ["observations", "web_delivery_estimates"]) {
+      await db.query(`CREATE TRIGGER reject_insert BEFORE INSERT ON ${tableName}
+        FOR EACH ROW EXECUTE FUNCTION reject_insert()`);
+      try {
+        const response = await upload(payload);
+        assert.equal(response.status, 503);
+        assert.equal(response.headers.get("Retry-After"), "5");
+        assert.deepEqual(await counts(), previous);
+      } finally {
+        await db.query(`DROP TRIGGER reject_insert ON ${tableName}`);
+      }
     }
     assert.equal((await upload(payload)).status, 201);
+  });
+
+  await t.test("upgrading a populated database backfills complete runs and preserves replay", async () => {
+    const response = await upload({ ...smoke, attempt: 3 });
+    assert.equal(response.status, 201);
+    const { id: incompleteId } = await response.json();
+    const { runs: before } = await (await runs("?limit=20")).json();
+
+    // Restore the schema shape from before migration 002, retaining the existing runs.
+    await db.query("DROP TABLE web_delivery_estimates");
+    await db.query("DELETE FROM effictiv_schema_migrations WHERE name = '002-web-delivery-estimates.mjs'");
+    await db.query("DELETE FROM observations WHERE run_id = $1 AND metric = 'transferred' AND subject = '2'", [incompleteId]);
+    const migrated = script("scripts/migrate.mjs");
+    assert.equal(migrated.status, 0, migrated.stderr);
+    assert.match(migrated.stdout, /Applied 002-web-delivery-estimates/);
+    assert.match(script("scripts/migrate.mjs").stdout, /Database is up to date/);
+
+    const { runs: after } = await (await runs("?limit=20")).json();
+    assert.deepEqual(after, before.map((run) => run.id === incompleteId ? { ...run, webDeliveryEstimate: null } : run));
+    const replay = await upload(smoke);
+    assert.equal(replay.status, 200);
+    assert.deepEqual(await replay.json(), { id: importedId });
+    assert.equal((await counts()).estimates, String(after.filter((run) => run.webDeliveryEstimate).length));
   });
 
   await page.close();

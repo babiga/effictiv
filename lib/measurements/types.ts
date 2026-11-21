@@ -1,3 +1,18 @@
+export type WebDeliveryEstimate = {
+  transferredBytes: string;
+  totalGramsCo2e: number;
+  gramsCo2ePerVisit: number;
+  estimatorVersion: string;
+  modelVersion: number;
+  assumptions: {
+    gridRegion: string;
+    gridIntensityGramsCo2ePerKwh: number;
+    greenHostingFactor: number;
+    cachePolicy: string;
+    boundary: string;
+  };
+};
+
 export type RunSummary = {
   id: string;
   scenario: string;
@@ -20,6 +35,7 @@ export type RunSummary = {
   energyReadings: Array<{ domain: string; value: number; unit: string }>;
   meanTimeToUsableMs: number | null;
   meanTransferredBytes: number | null;
+  webDeliveryEstimate: WebDeliveryEstimate | null;
 };
 
 export type RunPage = { runs: RunSummary[]; nextCursor: string | null };
