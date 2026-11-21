@@ -43,7 +43,7 @@ Check an item when its evidence is available. Link the implementation PR or acce
    - [x] Capture landing and scroll smoke results. [Smoke artifacts](../benchmarks/dashboard/fixtures/smoke-v1/)
    - [ ] Run both paths on a compatible RAPL runner and commit the sanitized GMT export.
 2. **Persist runs and connect Measurements**
-   - [x] Implement the PostgreSQL migration, trusted importer, and Live Measurements with CSV. [Pilot setup](measurements-pilot.md)
+   - [x] Implement the PostgreSQL migration, trusted importer, and Live Measurements with CSV. [PR #3](https://github.com/babiga/effictiv/pull/3) · [Pilot setup](measurements-pilot.md)
    - [x] Verify PostgreSQL, browser, and CSV behavior using smoke and test fixtures. [Integration test](../tests/measurements.test.mjs)
    - [ ] Replay a real GMT energy export and verify its energy, source, and deduplication in Measurements and CSV.
 3. **Compare commits and publish a GitHub summary**
