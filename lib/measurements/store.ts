@@ -5,6 +5,7 @@ import { Pool } from "pg";
 import type { z } from "zod";
 import { raplMetric, type uploadSchema } from "./schema.mjs";
 import type { RunSummary } from "./types";
+import { dashboardCachePolicy, saveWebDeliveryEstimate } from "./web-delivery-v1.mjs";
 
 type RunUpload = z.infer<typeof uploadSchema>;
 
@@ -108,6 +109,7 @@ export async function insertRun(upload: RunUpload) {
     }
 
     const { id } = inserted.rows[0];
+    const samples = observations(result);
     await client.query(`
       INSERT INTO observations (run_id, metric, subject, reading, unit, original_reading, original_unit)
       SELECT $1, metric, subject, reading, unit, original_reading, original_unit
@@ -115,7 +117,11 @@ export async function insertRun(upload: RunUpload) {
         metric text, subject text, reading double precision, unit text,
         original_reading double precision, original_unit text
       )
-    `, [id, JSON.stringify(observations(result))]);
+    `, [id, JSON.stringify(samples)]);
+    if (result.assertion === "passed" && workload.cachePolicy === dashboardCachePolicy) {
+      const bytesPerVisit = samples.filter(({ metric }) => metric === "transferred").map(({ original_reading }) => original_reading);
+      await saveWebDeliveryEstimate(client, id, bytesPerVisit);
+    }
     await client.query("COMMIT");
     return { id, status: "created" } as const;
   } catch (error) {
@@ -146,10 +152,19 @@ export async function listRuns(repositoryId: string, filters: RunFilters, cursor
       CASE WHEN r.assertion = 'passed' THEN stats.energy_wh / NULLIF(r.completed_visits, 0) END AS "energyWhPerVisit",
       r.energy_coverage AS "energyCoverage", r.energy_unavailable_reason AS "energyUnavailableReason",
       r.energy_phase AS "energyPhase", COALESCE(stats.energy_readings, '[]'::jsonb) AS "energyReadings",
-      stats.mean_time_to_usable AS "meanTimeToUsableMs", stats.mean_transferred AS "meanTransferredBytes"
+      stats.mean_time_to_usable AS "meanTimeToUsableMs", stats.mean_transferred AS "meanTransferredBytes",
+      CASE WHEN delivery.run_id IS NOT NULL THEN jsonb_build_object(
+        'transferredBytes', delivery.transferred_bytes::text,
+        'totalGramsCo2e', delivery.total_grams_co2e,
+        'gramsCo2ePerVisit', delivery.total_grams_co2e / NULLIF(r.completed_visits, 0),
+        'estimatorVersion', delivery.estimator_version,
+        'modelVersion', delivery.model_version,
+        'assumptions', delivery.assumptions
+      ) END AS "webDeliveryEstimate"
     FROM runs r
     JOIN projects p ON p.repository_id = r.repository_id AND p.is_public
     JOIN scenarios s ON s.id = r.scenario_id
+    LEFT JOIN web_delivery_estimates delivery ON delivery.run_id = r.id
     LEFT JOIN LATERAL (
       SELECT SUM(reading) FILTER (WHERE metric = $7) AS energy_wh,
         jsonb_agg(jsonb_build_object('domain', subject, 'value', original_reading, 'unit', original_unit)

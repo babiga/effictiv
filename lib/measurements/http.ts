@@ -21,13 +21,24 @@ export function runsCsv(runs: RunSummary[]) {
     "Source run ID", "Assertion", "Completed visits", "Failed visits", "Energy (Wh)", "Energy (Wh/visit)",
     "Original energy readings", "Measurement boundary", "Energy status reason", "Phase",
     "Mean time to usable (ms)", "Mean transferred bytes", "Source artifact", "Source SHA-256",
+    "Estimated web delivery (gCO₂e)", "Estimated web delivery (gCO₂e/visit)", "Web delivery input bytes",
+    "CO2.js version", "Sustainable Web Design version", "Web delivery grid region",
+    "Web delivery grid intensity (gCO₂e/kWh)", "Web delivery green hosting factor",
+    "Web delivery cache policy", "Web delivery boundary",
   ];
-  const rows = runs.map((run) => [
-    run.id, run.startedAt, run.scenario, run.revision, run.commitSha, run.collector, run.collectorVersion,
-    run.sourceRunId, run.assertion, run.completedVisits, run.failedVisits, run.energyWh, run.energyWhPerVisit,
-    run.energyReadings.map(({ domain, value, unit }) => `${domain} ${value} ${unit}`).join(" | "),
-    run.energyCoverage, run.energyUnavailableReason, run.energyPhase, run.meanTimeToUsableMs,
-    run.meanTransferredBytes, run.sourceUrl, run.sourceSha256,
-  ]);
+  const rows = runs.map((run) => {
+    const estimate = run.webDeliveryEstimate;
+    return [
+      run.id, run.startedAt, run.scenario, run.revision, run.commitSha, run.collector, run.collectorVersion,
+      run.sourceRunId, run.assertion, run.completedVisits, run.failedVisits, run.energyWh, run.energyWhPerVisit,
+      run.energyReadings.map(({ domain, value, unit }) => `${domain} ${value} ${unit}`).join(" | "),
+      run.energyCoverage, run.energyUnavailableReason, run.energyPhase, run.meanTimeToUsableMs,
+      run.meanTransferredBytes, run.sourceUrl, run.sourceSha256,
+      estimate?.totalGramsCo2e ?? null, estimate?.gramsCo2ePerVisit ?? null, estimate?.transferredBytes ?? null,
+      estimate?.estimatorVersion ?? null, estimate?.modelVersion ?? null, estimate?.assumptions.gridRegion ?? null,
+      estimate?.assumptions.gridIntensityGramsCo2ePerKwh ?? null, estimate?.assumptions.greenHostingFactor ?? null,
+      estimate?.assumptions.cachePolicy ?? null, estimate?.assumptions.boundary ?? null,
+    ];
+  });
   return [headers, ...rows].map((row) => row.map(csvCell).join(",")).join("\r\n") + "\r\n";
 }

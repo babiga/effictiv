@@ -12,7 +12,8 @@ import type { RunPage, RunSummary } from "@/lib/measurements/types";
 
 const endpoint = `/api/v1/projects/${pilotRepositoryId}/runs`;
 const scenarios = { "dashboard-landing": "Dashboard landing", "dashboard-scroll": "Dashboard scroll" };
-const energyFormat = new Intl.NumberFormat(undefined, { maximumSignificantDigits: 6 });
+const readingFormat = new Intl.NumberFormat(undefined, { maximumSignificantDigits: 6 });
+const bytesFormat = new Intl.NumberFormat();
 const averageFormat = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 });
 const startedAtFormat = new Intl.DateTimeFormat(undefined, {
   dateStyle: "medium", timeStyle: "short", timeZone: "UTC",
@@ -115,7 +116,7 @@ export function LiveMeasurements() {
               <table aria-label="Measurement runs" className="w-full text-left text-xs">
                 <thead className="border-b text-muted-foreground">
                   <tr>
-                    {["Run (UTC)", "Collector", "Visits", "Energy", "Workload averages", "Source"].map((name) => (
+                    {["Run (UTC)", "Collector", "Visits", "Energy", "Estimated web delivery", "Workload averages", "Source"].map((name) => (
                       <th key={name} scope="col" className="p-2 font-medium">{name}</th>
                     ))}
                   </tr>
@@ -145,6 +146,7 @@ export function LiveMeasurements() {
 
 function MeasurementRow({ run }: { run: RunSummary }) {
   const scenario = scenarios[run.scenario as keyof typeof scenarios] ?? run.scenario;
+  const estimate = run.webDeliveryEstimate;
   return (
     <tr className="border-b align-top last:border-b-0">
       <th scope="row" className="min-w-36 p-2 font-medium">
@@ -166,9 +168,9 @@ function MeasurementRow({ run }: { run: RunSummary }) {
           </>
         ) : (
           <>
-            <div className="font-medium tabular-nums">{energyFormat.format(run.energyWh)} Wh</div>
+            <div className="font-medium tabular-nums">{readingFormat.format(run.energyWh)} Wh</div>
             {run.energyWhPerVisit !== null && (
-              <div className="tabular-nums text-muted-foreground">{energyFormat.format(run.energyWhPerVisit)} Wh/visit</div>
+              <div className="tabular-nums text-muted-foreground">{readingFormat.format(run.energyWhPerVisit)} Wh/visit</div>
             )}
             <div className="text-muted-foreground">{run.energyCoverage}</div>
             <details className="mt-1">
@@ -179,6 +181,24 @@ function MeasurementRow({ run }: { run: RunSummary }) {
             </details>
           </>
         )}
+      </td>
+      <td className="min-w-48 p-2">
+        {estimate ? (
+          <>
+            <div className="font-medium tabular-nums">{readingFormat.format(estimate.gramsCo2ePerVisit)} gCO₂e/visit</div>
+            <details className="mt-1">
+              <summary className="cursor-pointer">Model details</summary>
+              <ul className="text-muted-foreground">
+                <li>CO2.js {estimate.estimatorVersion} · Sustainable Web Design v{estimate.modelVersion}</li>
+                <li>{readingFormat.format(estimate.totalGramsCo2e)} gCO₂e for {bytesFormat.format(BigInt(estimate.transferredBytes))} transferred bytes</li>
+                <li>Grid intensity ({estimate.assumptions.gridRegion}) {estimate.assumptions.gridIntensityGramsCo2ePerKwh} gCO₂e/kWh</li>
+                <li>Green hosting factor {estimate.assumptions.greenHostingFactor}</li>
+                <li className="capitalize">{estimate.assumptions.cachePolicy.replaceAll("-", " ")}</li>
+                <li>{estimate.assumptions.boundary}</li>
+              </ul>
+            </details>
+          </>
+        ) : <span className="text-muted-foreground">Unavailable</span>}
       </td>
       <td className="min-w-32 p-2 tabular-nums text-muted-foreground">
         <div>{run.meanTimeToUsableMs !== null ? `${averageFormat.format(run.meanTimeToUsableMs)} ms to usable` : "—"}</div>

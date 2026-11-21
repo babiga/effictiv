@@ -96,7 +96,7 @@ Check an item when its evidence is available. Link the implementation PR or acce
 | [Kepler](https://github.com/sustainable-computing-io/kepler) | First Kubernetes pilot with cluster access | Energy attributed to cluster workloads. Record attribution method and node coverage. |
 | [Scaphandre](https://github.com/hubblo-org/scaphandre) | First pilot with a supported operator-managed host | Host readings and process allocations. Retain parent host scope to prevent aggregation overlap. |
 | [CodeCarbon](https://github.com/mlco2/codecarbon) | First Python or ML batch workload | Energy and estimated emissions per job with the device coverage and regional assumptions used |
-| [CO2.js](https://github.com/thegreenwebfoundation/co2.js) | First team comparing web delivery changes | Modeled emissions for transferred bytes. Save the model version, byte count and assumptions. |
+| [CO2.js](https://github.com/thegreenwebfoundation/co2.js) | Dashboard pilot | Modeled web delivery emissions per visit with saved input bytes, model version and assumptions. [Pilot setup and results](measurements-pilot.md#web-delivery-estimates) |
 | [Boavizta API](https://github.com/Boavizta/boaviztapi) | A pilot can supply equipment inventory and an allocation basis | Estimated hardware manufacturing impacts. Record lifetime and share allocated to the workload. |
 
 For each later adapter, require a pinned upstream version, a representative export, an explicit unit conversion, a boundary-overlap test and one real pilot run. Expand to production totals when a team can supply actual workload volume. Defer water and material claims until a defensible source, region and allocation method exist.
