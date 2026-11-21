@@ -51,8 +51,8 @@ Check an item when its evidence is available. Link the implementation PR or acce
    - [x] Verify the A/A control, invalid comparison, improvement and regression, and publication replay with fixtures. [Policy tests](../tests/comparisons-policy.test.mjs) · [Integration tests](../tests/comparisons-integration.test.mjs)
    - [ ] Verify the advisory workflow with real A/A and PR captures on the disposable RAPL runner.
 4. **Verify an optimization**
-   - [ ] Persist one recommendation, its patch, and its verification comparison.
-   - [ ] Verify both dashboard paths against a declared latency budget and publish the evidence trail.
+   - [x] Implement persistent recommendations and fixture-backed verification for both dashboard paths. [Optimization pilot](optimization-pilot.md)
+   - [ ] Register the chart patch, measure both paths on a compatible RAPL runner, and publish the verification result.
 5. **Add CI energy**
    - [x] Import one repeatable Eco CI build job. [Pilot capture](measurements-pilot.md#ci-build-energy)
    - [x] Verify replay and display build and visit energy with their respective boundaries. [Integration tests](../tests/measurements.test.mjs)

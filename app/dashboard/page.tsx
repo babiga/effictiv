@@ -30,12 +30,7 @@ export default function Page() {
   const [searchQuery, setSearchQuery] = React.useState("");
   const [commandPaletteOpen, setCommandPaletteOpen] = React.useState(false);
 
-  const [appliedCount, setAppliedCount] = React.useState(0);
   const [dismissedIds, setDismissedIds] = React.useState<string[]>([]);
-
-  const handleApplyRecommendation = () => {
-    setAppliedCount((prev) => prev + 1);
-  };
 
   const handleDismissRecommendation = (id: string) => {
     setDismissedIds((prev) => [...prev, id]);
@@ -52,7 +47,6 @@ export default function Page() {
           <DashboardModule
             timeRange={timeRange}
             environment={environment}
-            appliedCount={appliedCount}
             onNavigate={(tab) => {
               setActiveTab(tab);
               setSearchQuery("");
@@ -84,7 +78,6 @@ export default function Page() {
       case "recommendations":
         return (
           <RecommendationsModule
-            onApply={handleApplyRecommendation}
             dismissedIds={dismissedIds}
             onDismiss={handleDismissRecommendation}
           />
