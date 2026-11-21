@@ -1,0 +1,19 @@
+{
+  "revision": 1,
+  "date": "2026-09-21T12:00:00Z",
+  "chromiumVersion": "145.0.7632.6",
+  "locale": "en-US",
+  "timezoneId": "UTC",
+  "viewport": { "width": 1440, "height": 800 },
+  "trend": {
+    "dateLabel": "Sep 6",
+    "energyLabel": "1,675"
+  },
+  "serviceProfile": {
+    "firstAxis": "Energy",
+    "expectedServices": {
+      "reindex-all": "100%",
+      "etl-batch": "51%"
+    }
+  }
+}

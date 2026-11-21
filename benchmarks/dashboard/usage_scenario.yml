@@ -1,0 +1,22 @@
+---
+name: Effictiv dashboard v1 - __GMT_VAR_PATH__
+author: Effictiv contributors
+description: Cold browser visits to the production dashboard and its fixed sample data.
+architecture: linux
+
+services:
+  effictiv-dashboard:
+    build:
+      context: ../..
+      dockerfile: benchmarks/dashboard/Dockerfile
+    shm_size: 1g
+    init: true
+    setup-commands:
+      - command: node /app/benchmarks/dashboard/visit.mjs wait
+
+flow:
+  - name: Dashboard visits
+    container: effictiv-dashboard
+    commands:
+      - type: console
+        command: node /app/benchmarks/dashboard/visit.mjs __GMT_VAR_PATH__ __GMT_VAR_VISITS__
