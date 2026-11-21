@@ -1,7 +1,8 @@
 import { z } from "zod";
+import { publicProjectExists } from "@/lib/measurements/database";
 import { runsCsv, unavailable } from "@/lib/measurements/http";
 import { scenarioKey } from "@/lib/measurements/schema.mjs";
-import { listRuns, publicProjectExists } from "@/lib/measurements/store";
+import { listRuns } from "@/lib/measurements/store";
 import type { RunPage } from "@/lib/measurements/types";
 
 const repository = z.string().regex(/^[1-9]\d{0,18}$/).refine((id) => id.length < 19 || id <= "9223372036854775807");

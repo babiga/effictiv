@@ -1,3 +1,4 @@
+import { createHash, timingSafeEqual } from "node:crypto";
 import type { RunSummary } from "./types";
 
 export function unavailable(error: unknown) {
@@ -8,11 +9,25 @@ export function unavailable(error: unknown) {
   });
 }
 
+export function authorizePilotUpload(request: Request) {
+  const token = process.env.EFFICTIV_PILOT_WRITE_TOKEN;
+  if (!token) return unavailable(new Error("EFFICTIV_PILOT_WRITE_TOKEN is required"));
+  const authorization = request.headers.get("authorization") ?? "";
+  const digest = (value: string) => createHash("sha256").update(value).digest();
+  if (!timingSafeEqual(digest(authorization), digest(`Bearer ${token}`))) {
+    return Response.json({ error: "A valid pilot upload credential is required." }, { status: 401 });
+  }
+}
+
 function csvCell(value: string | number | null) {
   if (value === null) return "";
   if (typeof value === "number") return String(value);
   const safe = /^[\s]*[=+@-]|^[\t\r\n]/.test(value) ? `'${value}` : value;
   return `"${safe.replaceAll('"', '""')}"`;
+}
+
+export function measurementsCsv(headers: string[], rows: (string | number | null)[][]) {
+  return [headers, ...rows].map((row) => row.map(csvCell).join(",")).join("\r\n") + "\r\n";
 }
 
 export function runsCsv(runs: RunSummary[]) {
@@ -40,5 +55,5 @@ export function runsCsv(runs: RunSummary[]) {
       estimate?.assumptions.cachePolicy ?? null, estimate?.assumptions.boundary ?? null,
     ];
   });
-  return [headers, ...rows].map((row) => row.map(csvCell).join(",")).join("\r\n") + "\r\n";
+  return measurementsCsv(headers, rows);
 }

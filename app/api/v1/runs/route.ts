@@ -1,16 +1,10 @@
-import { createHash, timingSafeEqual } from "node:crypto";
-import { unavailable } from "@/lib/measurements/http";
+import { authorizePilotUpload, unavailable } from "@/lib/measurements/http";
 import { uploadSchema } from "@/lib/measurements/schema.mjs";
 import { insertRun } from "@/lib/measurements/store";
 
 export async function POST(request: Request) {
-  const token = process.env.EFFICTIV_PILOT_WRITE_TOKEN;
-  if (!token) return unavailable(new Error("EFFICTIV_PILOT_WRITE_TOKEN is required"));
-  const authorization = request.headers.get("authorization") ?? "";
-  const digest = (value: string) => createHash("sha256").update(value).digest();
-  if (!timingSafeEqual(digest(authorization), digest(`Bearer ${token}`))) {
-    return Response.json({ error: "A valid pilot upload credential is required." }, { status: 401 });
-  }
+  const authorizationError = authorizePilotUpload(request);
+  if (authorizationError) return authorizationError;
 
   let body: unknown;
   try {

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawn, spawnSync } from "node:child_process";
-import { randomBytes, randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { once } from "node:events";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -327,4 +327,163 @@ test("live Measurements, trusted upload, and export", async (t) => {
   });
 
   await page.close();
+});
+
+const ciSource = "https://example.test/fixtures/synthetic-eco-ci.json";
+const ciCommit = "ab".repeat(20);
+
+function ciFixture(runId, { install = "success", build = "success", zero = false, unsampled = false } = {}) {
+  const steps = [
+    { label: "npm ci", energy_joules: zero ? "0" : "3.6e3", time: "20.25" },
+    { label: "npm run build", energy_joules: zero ? "0" : "7200", time: "32.44" },
+  ].filter(({ label }) => label === "npm ci" ? !unsampled : build !== "skipped");
+  return {
+    schemaVersion: 1, repositoryId: pilotRepositoryId, repository: "babiga/effictiv",
+    commitSha: ciCommit, runId, attempt: 1, job: "build", jobId: "9876543210",
+    runner: { image: "ubuntu-24.04", imageVersion: "test", architecture: "x64", cpuModel: "Fixture VM", logicalCpus: 4 },
+    collector: { version: "5.3.0", commit: "782dd4a31bc426a6ae26a7b08d89af454b10ffc0", model: "github_EPYC_7763_4_CPU_shared.sh" },
+    startedAt: "2026-11-21T12:00:00.000Z", finishedAt: "2026-11-21T12:00:53.000Z",
+    outcomes: { install, build },
+    collectorOutcomes: { initialize: "success", install: "success", build: build === "skipped" ? "skipped" : "success" },
+    lapData: JSON.stringify({ repository: "babiga%2Feffictiv", run_id: runId, steps }),
+    totalSamplesJoules: zero ? "0\n0\n" : build === "skipped" ? "3600\n100\n" : "\n3600\n7200\n1800.0\n",
+  };
+}
+
+function ciUpload(artifact, { credential = token, digest = createHash("sha256").update(artifact).digest("hex"), artifactUrl = ciSource } = {}) {
+  return fetch(`${baseUrl}/api/v1/ci-runs`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${credential}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ repositoryId: pilotRepositoryId, artifactUrl, artifactSha256: digest, artifact }),
+  });
+}
+
+function ciRuns(query = "", repository = pilotRepositoryId) {
+  return fetch(`${baseUrl}/api/v1/projects/${repository}/ci-runs${query}`);
+}
+
+test("CI build import and measurement boundaries", async (t) => {
+  const complete = JSON.stringify(ciFixture("901"));
+  let importedId;
+  const page = await browser.newPage({ acceptDownloads: true, locale: "en-US" });
+  try {
+    await t.test("trusted upload verifies provenance and replays exact bytes", async () => {
+      assert.deepEqual(await (await ciRuns()).json(), { runs: [], nextCursor: null });
+      assert.equal((await ciUpload(complete, { credential: "wrong-token" })).status, 401);
+      assert.equal((await ciUpload(complete, { digest: "0".repeat(64) })).status, 422);
+      const invalid = { ...ciFixture("901"), totalSamplesJoules: "unknown\n" };
+      assert.equal((await ciUpload(JSON.stringify(invalid))).status, 422);
+      const wrongRun = { ...ciFixture("901"), runId: "999" };
+      assert.equal((await ciUpload(JSON.stringify(wrongRun))).status, 422);
+
+      const responses = await Promise.all([ciUpload(complete), ciUpload(complete), ciUpload(complete)]);
+      assert.deepEqual(responses.map(({ status }) => status).sort(), [200, 200, 201]);
+      const ids = await Promise.all(responses.map(async (response) => (await response.json()).id));
+      assert.equal(new Set(ids).size, 1);
+      importedId = ids[0];
+      assert.equal((await ciUpload(`${complete}\n`)).status, 409);
+
+      const directory = await mkdtemp(join(tmpdir(), "effictiv-eco-ci-"));
+      try {
+        const filename = join(directory, "artifact.json");
+        await writeFile(filename, complete);
+        const replay = script("scripts/import-ci-run.mjs", [filename, ciSource]);
+        assert.equal(replay.status, 0, replay.stderr);
+        assert.match(replay.stdout, new RegExp(`Already imported ${importedId}`));
+      } finally {
+        await rm(directory, { recursive: true });
+      }
+      const { runs: [run] } = await (await ciRuns()).json();
+      assert.equal(run.jobJoules, 12600);
+      assert.equal(run.jobWh, 3.5);
+      assert.equal(run.buildWh, 2);
+      assert.deepEqual(run.phases.map(({ joules, wattHours }) => [joules, wattHours]), [["3.6e3", 1], ["7200", 2]]);
+      assert.equal(run.artifactSha256, createHash("sha256").update(complete).digest("hex"));
+    });
+
+    await t.test("the same commit displays visit and build readings with separate units", async () => {
+      const dashboard = await syntheticEnergy([{ domain: "Package_0", value: 3, unit: "Wh" }]);
+      dashboard.result.commitSha = ciCommit;
+      assert.equal((await upload(dashboard)).status, 201);
+      await openMeasurements(page);
+      await page.getByRole("textbox", { name: "Search measurements" }).fill(ciCommit.slice(0, 8));
+      await page.getByRole("table", { name: "Measurement runs" }).getByText("1 Wh/visit", { exact: true }).waitFor();
+
+      await page.getByRole("tab", { name: "CI builds" }).click();
+      await page.getByRole("textbox", { name: "Search by commit prefix" }).fill(ciCommit.slice(0, 8).toUpperCase());
+      const table = page.getByRole("table", { name: "CI build runs" });
+      await table.getByText("2 Wh/build", { exact: true }).waitFor();
+      await table.getByText("3.5 Wh", { exact: true }).waitFor();
+      await table.getByText("Phase details", { exact: true }).click();
+      await table.getByText("npm ci · Passed · 1 Wh (3.6e3 J)", { exact: true }).waitFor();
+      assert.equal(await table.getByRole("link", { name: "Collector artifact" }).getAttribute("href"), ciSource);
+      const [download] = await Promise.all([
+        page.waitForEvent("download"), page.getByRole("link", { name: "Export CSV" }).click(),
+      ]);
+      const csv = (await readFile(await download.path(), "utf8")).trimEnd().split("\r\n");
+      assert.equal(csv.length, 2);
+      assert.ok(csv[0].includes('"Modeled energy per successful build (Wh/build)"'));
+      assert.ok(csv[1].startsWith(`"${importedId}"`));
+      assert.ok(csv[1].includes(",12600,3.5,2,"));
+      assert.ok(!csv[0].includes("Wh/visit"));
+      await page.getByRole("tab", { name: "Dashboard visits" }).click();
+      await page.getByRole("table", { name: "Measurement runs" }).waitFor();
+    });
+
+    await t.test("zero, failed and unavailable results retain their meaning through pagination", async () => {
+      const differentCommit = "cd".repeat(20);
+      const unsupportedRunner = ciFixture("906");
+      unsupportedRunner.runner.logicalCpus = 2;
+      const cases = [
+        ciFixture("902", { zero: true }),
+        ciFixture("903", { build: "failure" }),
+        ciFixture("904", { install: "failure", build: "skipped" }),
+        ciFixture("905", { unsampled: true }),
+        unsupportedRunner,
+      ];
+      for (const artifact of cases) {
+        const response = await ciUpload(JSON.stringify({ ...artifact, commitSha: differentCommit }));
+        assert.equal(response.status, 201, await response.text());
+      }
+      const { runs: first, nextCursor } = await (await ciRuns("?search=CD&limit=2")).json();
+      assert.equal(first.length, 2);
+      assert.ok(nextCursor);
+      const { runs: second, nextCursor: last } = await (await ciRuns(`?search=CD&limit=3&cursor=${nextCursor}`)).json();
+      assert.equal(last, null);
+      const byId = new Map([...first, ...second].map((run) => [run.runId, run]));
+      assert.equal(byId.size, 5);
+      assert.deepEqual([byId.get("902").jobWh, byId.get("902").buildWh], [0, 0]);
+      assert.deepEqual([byId.get("903").jobWh, byId.get("903").buildWh], [3.5, null]);
+      assert.deepEqual([byId.get("904").jobJoules, byId.get("904").buildWh], [3700, null]);
+      assert.deepEqual([byId.get("905").jobWh, byId.get("905").buildWh], [null, null]);
+      assert.match(byId.get("905").energyUnavailableReason, /did not capture/);
+      assert.deepEqual([byId.get("906").jobWh, byId.get("906").buildWh], [null, null]);
+      assert.match(byId.get("906").energyUnavailableReason, /model preset/);
+      const csv = (await (await ciRuns("?search=CD&format=csv")).text()).trimEnd().split("\r\n");
+      assert.deepEqual(csv.slice(1).map((row) => row.split(",")[0]), [...first, ...second].map(({ id }) => `"${id}"`));
+
+      await db.query("INSERT INTO projects VALUES (2, 'other/public', true), (3, 'other/private', false) ON CONFLICT DO NOTHING");
+      assert.deepEqual(await (await ciRuns("", "2")).json(), { runs: [], nextCursor: null });
+      assert.equal((await ciRuns("", "3")).status, 404);
+    });
+
+    await t.test("the captured GitHub Actions artifact retains its original readings on replay", async () => {
+      const artifact = await readFile("benchmarks/eco-ci/fixtures/github-actions-44943649169.json", "utf8");
+      const source = { artifactUrl: "https://github.com/babiga/effictiv/actions/runs/44943649169/artifacts/14722432252" };
+      const created = await ciUpload(artifact, source);
+      assert.equal(created.status, 201);
+      const first = await created.json();
+      const replay = await ciUpload(artifact, source);
+      assert.equal(replay.status, 200);
+      assert.deepEqual(await replay.json(), first);
+      const { runs: [run] } = await (await ciRuns("?search=9fd146b")).json();
+      assert.equal(run.id, first.id);
+      assert.equal(run.jobJoules, 267.175183212);
+      assert.equal(run.phases[0].joules, "190.012");
+      assert.equal(run.phases[1].joules, "76.2101");
+      assert.ok(Math.abs(run.buildWh - 0.02116947222222222) < 1e-12);
+    });
+  } finally {
+    await page.close();
+  }
 });

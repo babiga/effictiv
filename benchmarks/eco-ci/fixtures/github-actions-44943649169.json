@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "repositoryId": "1306723014",
+  "repository": "babiga/effictiv",
+  "commitSha": "9fd146b2e986e8a2eae4557f97549e1f3250dd01",
+  "runId": "44943649169",
+  "attempt": 1,
+  "job": "build",
+  "jobId": "136966097551",
+  "runner": {
+    "image": "ubuntu-24.04",
+    "imageVersion": "20261116.133.1",
+    "architecture": "x64",
+    "cpuModel": "Intel(R) Xeon(R) 6975P-C",
+    "logicalCpus": 4
+  },
+  "collector": {
+    "version": "5.3.0",
+    "commit": "782dd4a31bc426a6ae26a7b08d89af454b10ffc0",
+    "model": "github_EPYC_7763_4_CPU_shared.sh"
+  },
+  "startedAt": "2026-11-21T19:57:16.334Z",
+  "finishedAt": "2026-11-21T19:58:12.116Z",
+  "outcomes": {
+    "install": "success",
+    "build": "success"
+  },
+  "collectorOutcomes": {
+    "initialize": "success",
+    "install": "success",
+    "build": "success"
+  },
+  "lapData": "{  \"repository\": \"babiga%2Feffictiv\",  \"branch\": \"5%2Fmerge\",  \"workflow\": \"Eco%20CI%20build%20energy\",  \"run_id\": \"44943649169\",  \"steps\": [    {      \"label\": \"npm ci\",      \"cpu_avg_percent\": \"33.3022\",      \"energy_joules\": \"190.012\",      \"power_avg_watts\": \"4.42\",      \"time\": \"42.99\"    },    {      \"label\": \"npm run build\",      \"cpu_avg_percent\": \"64.8935\",      \"energy_joules\": \"76.2101\",      \"power_avg_watts\": \"6.09\",      \"time\": \"12.51\"    }  ]}",
+  "totalSamplesJoules": "3.938637433\n4.358163934\n4.587008610\n5.089564588\n5.261756990\n5.265034351\n5.868686399\n5.981618817\n5.458865278\n5.678807014\n4.713135143\n4.082228989\n4.135133303\n4.093085472\n4.097289420\n4.106504769\n4.087099920\n4.141834343\n4.094386395\n4.176047896\n4.243631661\n4.568773840\n4.097931052\n4.095912742\n4.088507605\n4.376435461\n4.403981073\n4.088318565\n4.125947772\n4.096036188\n4.086061267\n4.089131124\n4.086235594\n4.093255892\n4.088183834\n4.095600986\n4.090253773\n4.093001831\n4.095300738\n4.445068486\n5.437617947\n4.266290708\n3.645797314\n0.500029175\n3.959862871\n6.416165317\n8.200804841\n7.930314033\n6.500670575\n5.895421013\n6.767260256\n6.378675307\n5.749767898\n5.861487421\n5.410534143\n4.867324996\n2.271769416\n0.452931433\n"
+}

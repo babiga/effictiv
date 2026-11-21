@@ -44,6 +44,27 @@ The November 21, 2026 pilot ran the production build with Playwright on the host
 
 For an existing pilot, pause the trusted uploader and let in-flight imports finish. Run `npm run db:migrate` against the pilot database, deploy the updated app, then resume uploads. The migration backfills passing historical runs with complete byte observations. After rollout, replay a known upload and confirm it returns the same run ID and shows one estimate in Live Measurements and CSV.
 
+## CI build energy
+
+Run **Eco CI build energy** in GitHub Actions and download the `effictiv-eco-ci-<run>-<attempt>` artifact. Keep its JSON at a durable HTTPS URL. For the pilot, repository maintainers review the run identity and import the export manually using the same trusted credential and app URL as the dashboard importer. Apply `npm run db:migrate` to the target database before the first CI import. [Workflow](../.github/workflows/eco-ci-build.yml)
+
+```bash
+gh run download "$RUN_ID" --repo babiga/effictiv --name "effictiv-eco-ci-$RUN_ID-$ATTEMPT"
+npm run import:ci-run -- effictiv-eco-ci.json "$ARTIFACT_URL"
+```
+
+`POST /api/v1/ci-runs` accepts the Bearer token and a JSON object containing `repositoryId`, `artifactUrl`, `artifactSha256`, and `artifact` as the original JSON text. `201` creates a run, `200` returns the ID of an identical artifact, and `409` reports changed bytes for the same repository, workflow run, attempt, and job. `GET /api/v1/projects/1306723014/ci-runs` accepts `search` for a commit prefix, `limit`, `cursor`, and `format=csv`. CSV exports all matching CI records.
+
+The modeled job total covers dependency installation and the production build, including Eco CI overhead. Wh/build uses the `npm run build` phase when that command succeeds and its interval has a usable sample. The phase readings are part of the job total. The four-vCPU x64 preset models power from utilization and is calibrated for AMD EPYC. The GitHub-hosted pilot runner reported an Intel Xeon. Live Measurements includes both the reported CPU and preset for context. [Eco CI release](https://github.com/green-coding-solutions/eco-ci-energy-estimation/tree/v5.3.0)
+
+| First GitHub-hosted capture | Joules | Watt-hours |
+| --- | ---: | ---: |
+| `npm ci` | 190.012 | 0.0527811111 |
+| `npm run build` | 76.2101 | 0.0211694722 |
+| Job interval | 267.175183212 | 0.07421532867 |
+
+The build passed on November 21, 2026. The retained artifact is from workflow run `44943649169`, attempt `1`, and commit `9fd146b`. [GitHub run](https://github.com/babiga/effictiv/actions/runs/44943649169) · [Raw collector artifact](../benchmarks/eco-ci/fixtures/github-actions-44943649169.json)
+
 ## Verify locally
 
 Use a disposable PostgreSQL database. The integration suite creates and removes its own schema. It uses the captured Playwright smoke artifacts for replay and synthetic RAPL readings for unit conversion, measured zero, and failing assertions.
