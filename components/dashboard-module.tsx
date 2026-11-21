@@ -32,6 +32,7 @@ import {
   mockInsights,
   mockDeployments,
   mockSustainabilitySummary,
+  mockDataNow,
 } from "@/lib/mockData";
 import { EnergyTrendChart } from "@/components/charts/energy-trend-chart";
 import { EnergyBreakdownChart } from "@/components/charts/energy-breakdown-chart";
@@ -104,7 +105,7 @@ export function DashboardModule({
     ];
     return Array.from({ length: points }).map((_, idx) => {
       const day = points - idx;
-      const date = new Date();
+      const date = mockDataNow();
       date.setDate(date.getDate() - day);
       const baseEnergy =
         environment === "production"
@@ -130,10 +131,10 @@ export function DashboardModule({
   const deploymentMarkers = React.useMemo(() => {
     const points = timeRange === "7d" ? 7 : timeRange === "30d" ? 15 : 30;
     const recentDeployments = mockDeployments.slice(0, 4);
+    const now = mockDataNow();
     return recentDeployments
       .map((dep) => {
         const depDate = new Date(dep.timestamp);
-        const now = new Date();
         const daysAgo = Math.floor(
           (now.getTime() - depDate.getTime()) / (1000 * 60 * 60 * 24),
         );

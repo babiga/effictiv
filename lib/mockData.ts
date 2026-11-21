@@ -169,7 +169,12 @@ export interface SustainabilitySummary {
   };
 }
 
-const baseDate = new Date();
+export function mockDataNow() {
+  const benchmarkDate = process.env.NEXT_PUBLIC_EFFICTIV_BENCHMARK_DATE;
+  return benchmarkDate ? new Date(benchmarkDate) : new Date();
+}
+
+const baseDate = mockDataNow();
 const subtractDays = (days: number) => {
   const d = new Date(baseDate);
   d.setDate(d.getDate() - days);
