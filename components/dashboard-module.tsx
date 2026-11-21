@@ -24,7 +24,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   mockApplications,
-  mockMeasurements,
   mockRecommendations,
   mockAlerts,
   mockHotspots,
@@ -42,10 +41,42 @@ import { SustainabilitySummaryHero } from "@/components/cards/sustainability-sum
 import { SustainabilityImpact } from "@/components/cards/sustainability-impact";
 import { EnhancedInsightsSection } from "@/components/enhanced-insights-section";
 import { EnhancedRecommendationsSection } from "@/components/enhanced-recommendations-section";
-import {
-  ServiceRadarChart,
-  computeRadarData,
-} from "@/components/charts/service-radar-chart";
+
+const ServiceRadarProfile = React.lazy(() =>
+  import("@/components/charts/service-radar-chart").then((module) => ({ default: module.ServiceRadarProfile })),
+);
+
+function DeferredServiceEnergyProfile() {
+  const [hasEnteredViewport, setHasEnteredViewport] = React.useState(false);
+  const chartHeight = 220;
+
+  const observe = React.useCallback((element: HTMLDivElement | null) => {
+    if (!element || hasEnteredViewport) return;
+    if (typeof IntersectionObserver === "undefined") {
+      setHasEnteredViewport(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        observer.disconnect();
+        setHasEnteredViewport(true);
+      }
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [hasEnteredViewport]);
+
+  return (
+    <div ref={observe} style={{ height: chartHeight }} data-slot="service-energy-profile">
+      {hasEnteredViewport && (
+        <React.Suspense fallback={null}>
+          <ServiceRadarProfile height={chartHeight} />
+        </React.Suspense>
+      )}
+    </div>
+  );
+}
 
 interface DashboardModuleProps {
   timeRange: string;
@@ -227,8 +258,6 @@ export function DashboardModule({
       color: "#6366f1",
     },
   ];
-
-  const radarData = React.useMemo(() => computeRadarData(mockMeasurements), []);
 
   return (
     <div className="flex flex-col gap-6 p-4 lg:p-6">
@@ -485,7 +514,7 @@ export function DashboardModule({
               </CardDescription>
             </CardHeader>
             <CardContent className="flex-1">
-              <ServiceRadarChart data={radarData} height={220} />
+              <DeferredServiceEnergyProfile />
             </CardContent>
           </Card>
         </div>
