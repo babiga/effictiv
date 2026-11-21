@@ -1,5 +1,7 @@
 "use client";
 
+import { useMemo } from "react";
+import { mockMeasurements } from "@/lib/mockData";
 import {
   RadarChart,
   Radar,
@@ -68,6 +70,11 @@ function CustomTooltip({
       ))}
     </div>
   );
+}
+
+export function ServiceRadarProfile({ height }: { height: number }) {
+  const data = useMemo(() => computeRadarData(mockMeasurements), []);
+  return <ServiceRadarChart data={data} height={height} />;
 }
 
 export function ServiceRadarChart({
