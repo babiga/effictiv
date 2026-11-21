@@ -4,7 +4,6 @@ import * as React from "react";
 import {
   GaugeIcon,
   DownloadIcon,
-  ChevronDownIcon,
   SearchIcon,
   RefreshCwIcon,
 } from "lucide-react";
@@ -15,7 +14,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { mockMeasurements } from "@/lib/mockData";
 import { toast } from "sonner";
+import { LiveMeasurements } from "@/components/live-measurements";
 
 function exportToCSVHelper(filteredData: typeof mockMeasurements) {
   const headers = [
@@ -64,6 +63,24 @@ function exportToCSVHelper(filteredData: typeof mockMeasurements) {
 }
 
 export function MeasurementsModule() {
+  const [mode, setMode] = React.useState<"live" | "demo">("live");
+
+  return (
+    <>
+      <div role="group" aria-label="Measurements data mode" className="flex gap-2 px-4 pt-4 lg:px-6 lg:pt-6">
+        <Button size="sm" variant={mode === "live" ? "default" : "outline"} aria-pressed={mode === "live"} onClick={() => setMode("live")}>
+          Live
+        </Button>
+        <Button size="sm" variant={mode === "demo" ? "default" : "outline"} aria-pressed={mode === "demo"} onClick={() => setMode("demo")}>
+          Demo
+        </Button>
+      </div>
+      {mode === "live" ? <LiveMeasurements /> : <DemoMeasurements />}
+    </>
+  );
+}
+
+function DemoMeasurements() {
   const [data] = React.useState(mockMeasurements);
   const [selectedApp, setSelectedApp] = React.useState<string | null>("all");
   const [searchQuery, setSearchQuery] = React.useState("");

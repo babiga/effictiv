@@ -34,6 +34,28 @@ Operational emissions in gCO₂e equal energy in kWh multiplied by the grid inte
 
 Each milestone is a separately reviewable change. Use the existing lockfile and record the baseline results of `npm ci`, `npm run lint` and `npm run build` before editing application code. Repeat the relevant checks in each PR and distinguish existing failures from new ones.
 
+### Milestone checklist
+
+Check an item when its evidence is available. Link the implementation PR or acceptance artifact when the item is checked.
+
+1. **Dashboard benchmark**
+   - [x] Merge the scenario and reproduction guide. [PR #2](https://github.com/babiga/effictiv/pull/2)
+   - [x] Capture landing and scroll smoke results. [Smoke artifacts](../benchmarks/dashboard/fixtures/smoke-v1/)
+   - [ ] Run both paths on a compatible RAPL runner and commit the sanitized GMT export.
+2. **Persist runs and connect Measurements**
+   - [x] Implement the PostgreSQL migration, trusted importer, and Live Measurements with CSV. [PR #3](https://github.com/babiga/effictiv/pull/3) · [Pilot setup](measurements-pilot.md)
+   - [x] Verify PostgreSQL, browser, and CSV behavior using smoke and test fixtures. [Integration test](../tests/measurements.test.mjs)
+   - [ ] Replay a real GMT energy export and verify its energy, source, and deduplication in Measurements and CSV.
+3. **Compare commits and publish a GitHub summary**
+   - [ ] Implement matched repetitions, the comparison policy, and the GitHub run summary.
+   - [ ] Verify the A/A control, invalid comparison, improvement and regression, and publication replay.
+4. **Verify an optimization**
+   - [ ] Persist one recommendation, its patch, and its verification comparison.
+   - [ ] Verify both dashboard paths against a declared latency budget and publish the evidence trail.
+5. **Add CI energy**
+   - [ ] Import one repeatable Eco CI build job.
+   - [ ] Verify replay and display build and visit energy with their respective boundaries.
+
 ### 1. Produce one real dashboard benchmark
 
 - Add a versioned Green Metrics Tool scenario under `benchmarks/dashboard/`. Build the production app and start it with a fixed fixture, viewport and browser version. Exclude build time from the visit interval.
