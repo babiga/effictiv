@@ -1,0 +1,14 @@
+---
+name: Effictiv matched dashboard visits - __GMT_VAR_PATH__
+author: Effictiv contributors
+description: Observe CPU package energy while the trusted browser exercises the isolated app.
+architecture: linux
+flow:
+  - name: Dashboard visits
+    container: null
+    commands:
+      - type: console
+        command: docker exec effictiv-comparison-browser node /harness/visit.mjs __GMT_VAR_PATH__ 30
+        ignore-errors: true
+        log-stdout: false
+        log-stderr: false
