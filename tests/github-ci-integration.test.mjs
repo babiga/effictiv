@@ -55,7 +55,7 @@ async function capture(repository, id, kind = "success") {
   const prefix = kind === "workload" ? "effictiv-workloads" : "effictiv-eco-ci";
   const capturePath = join(path, prefix + ".json");
   const archivePath = join(path, "artifact.zip");
-  const report = workloadReport();
+  const report = {...workloadReport(), runId:String(id), repositoryId:String(repository.id)};
   const raw = JSON.stringify(kind === "workload" ? report : artifact);
   await writeFile(capturePath, raw);
   await exec("zip", ["-q", "-j", archivePath, capturePath]);
@@ -316,6 +316,13 @@ test("accounts, scoped repositories and automatic CI energy imports", async (t) 
       await page.getByText("Project target score",{exact:true}).waitFor();
       await page.getByText("80 / 100",{exact:true}).first().waitFor();
       await page.getByText("improved",{exact:true}).waitFor();
+      await capture(privateRepo, 9101, "workload");
+      await saveState();
+      await deliver(privateRepo, 9101);
+      await statusFor(9101, "imported");
+      await page.reload();
+      await page.getByText("Target score history", {exact:true}).waitFor();
+      assert.equal(await page.getByRole("link",{name:/score 80/}).count(),2);
       const download=await page.request.get(base+urlFor(privateRepo)+"/setup/effictiv-workloads.yml");
       assert.equal(download.status(),200);
       assert.match(await download.text(), /Effictiv workload efficiency/);

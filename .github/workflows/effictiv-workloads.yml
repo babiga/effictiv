@@ -57,7 +57,7 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           repository: babiga/effictiv
-          ref: 34f1a81e1ddf4851eff170d63ae074136f28f121
+          ref: 003adf7ffe619ba429ac152e9f712d771ded242e
           path: effictiv-tools
           sparse-checkout: collector
           persist-credentials: false
