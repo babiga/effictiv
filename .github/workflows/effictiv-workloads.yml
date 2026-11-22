@@ -1,0 +1,89 @@
+name: Effictiv workload efficiency
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      baseline:
+        description: Baseline commit SHA (defaults to the candidate's parent)
+        required: false
+      candidate:
+        description: Candidate commit SHA (defaults to the selected branch head)
+        required: false
+      sensor:
+        type: boolean
+        description: Use a dedicated GMT runner for configured energy scenarios
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  measure:
+    if: >-
+      (github.event_name == 'pull_request' && github.event.pull_request.head.repo.id == github.event.repository.id)
+      || (github.event_name != 'pull_request' && github.ref_name == github.event.repository.default_branch)
+    runs-on: ${{ github.event_name == 'workflow_dispatch' && inputs.sensor && 'effictiv-rapl-disposable' || 'ubuntu-24.04' }}
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          path: candidate
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Resolve comparison
+        id: commits
+        env:
+          HEAD_INPUT: ${{ inputs.candidate }}
+          BASE_INPUT: ${{ inputs.baseline || github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          set -eu
+          cd candidate
+          if [[ -n "$HEAD_INPUT" ]]; then
+            [[ "$HEAD_INPUT" =~ ^[a-f0-9]{40}$ ]]
+            git checkout --detach "$HEAD_INPUT"
+          fi
+          if [[ -z "$BASE_INPUT" || "$BASE_INPUT" =~ ^0+$ ]]; then
+            BASE_INPUT=$(git rev-parse --verify HEAD^ 2>/dev/null || true)
+          fi
+          if [[ -n "$BASE_INPUT" ]]; then
+            [[ "$BASE_INPUT" =~ ^[a-f0-9]{40}$ ]]
+            git worktree add --detach ../baseline "$BASE_INPUT"
+            echo "dir=baseline" >> "$GITHUB_OUTPUT"
+          else
+            echo "dir=-" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          repository: babiga/effictiv
+          ref: 34f1a81e1ddf4851eff170d63ae074136f28f121
+          path: effictiv-tools
+          sparse-checkout: collector
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '22.23.5'
+      - name: Install pinned tools
+        run: |
+          npm ci --prefix effictiv-tools/collector --no-audit --no-fund
+          if [[ -f candidate/.effictiv.yml ]]; then
+            effictiv-tools/collector/node_modules/.bin/playwright-core install chromium
+            archive="$RUNNER_TEMP/k6.tar.gz"
+            curl -fsSL --retry 3 https://github.com/grafana/k6/releases/download/v1.6.1/k6-v1.6.1-linux-amd64.tar.gz -o "$archive"
+            echo "68df4958a1b089dc6f70a234e07c7ec818922f83b261ca24f3abf79882b13343  $archive" | sha256sum --check
+            tar -xzf "$archive" -C "$RUNNER_TEMP"
+            echo "$RUNNER_TEMP/k6-v1.6.1-linux-amd64" >> "$GITHUB_PATH"
+          fi
+      - name: Scan and measure
+        env:
+          EFFICTIV_WORKFLOW_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          BASE_DIR: ${{ steps.commits.outputs.dir }}
+          GMT_DIR: ${{ github.event_name == 'workflow_dispatch' && inputs.sensor && vars.EFFICTIV_RAPL_GMT_DIR || '' }}
+        run: node effictiv-tools/collector/run.mjs candidate "$BASE_DIR" "$RUNNER_TEMP/effictiv-workloads.json"
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: effictiv-workloads-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/effictiv-workloads.json
+          if-no-files-found: error
+          retention-days: 90

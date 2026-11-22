@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/dashboard/projects/\\[repositoryId\\]/setup/\\[file\\]": [
-      "./lib/ci/setup/effictiv-energy.yml", "./scripts/capture-eco-ci.mjs",
+      "./lib/ci/setup/*.yml", "./.github/workflows/effictiv-workloads.yml", "./scripts/capture-eco-ci.mjs",
     ],
   },
   images: {

@@ -1,3 +1,4 @@
+import { workloadReport } from "./workload-fixtures.mjs";
 import assert from "node:assert/strict";
 import { execFile, spawn } from "node:child_process";
 import { createHash, createHmac, generateKeyPairSync, randomBytes } from "node:crypto";
@@ -51,22 +52,24 @@ async function capture(repository, id, kind = "success") {
 
   const path = join(directory, String(id));
   await mkdir(path);
-  const capturePath = join(path, "effictiv-eco-ci.json");
+  const prefix = kind === "workload" ? "effictiv-workloads" : "effictiv-eco-ci";
+  const capturePath = join(path, prefix + ".json");
   const archivePath = join(path, "artifact.zip");
-  const raw = JSON.stringify(artifact);
+  const report = workloadReport();
+  const raw = JSON.stringify(kind === "workload" ? report : artifact);
   await writeFile(capturePath, raw);
   await exec("zip", ["-q", "-j", archivePath, capturePath]);
   const archive = await readFile(archivePath);
 
   const run = {
-    id, run_attempt: 1, event: "workflow_dispatch", path: ".github/workflows/effictiv-energy.yml", status: "completed",
-    conclusion: kind === "failure" ? "failure" : "success", head_sha: artifact.commitSha,
+    id, run_attempt: 1, event: "workflow_dispatch", path: kind === "workload" ? ".github/workflows/effictiv-workloads.yml" : ".github/workflows/effictiv-energy.yml", status: "completed",
+    conclusion: kind === "failure" ? "failure" : "success", head_sha: kind === "workload" ? report.commitSha : artifact.commitSha,
     head_branch: repository.default_branch, head_repository: { id: repository.id },
   };
   const source = {
-    id: id + 1000, name: `effictiv-eco-ci-${id}-1`, expired: false, size_in_bytes: archive.length,
+    id: id + 1000, name: `${prefix}-${id}-1`, expired: false, size_in_bytes: archive.length,
     digest: `sha256:${digest(archive)}`,
-    workflow_run: { id, repository_id: repository.id, head_repository_id: repository.id, head_sha: artifact.commitSha },
+    workflow_run: { id, repository_id: repository.id, head_repository_id: repository.id, head_sha: kind === "workload" ? report.commitSha : artifact.commitSha },
   };
   state.runs[id] = { run, source, archivePath, repositoryId: repository.id, manual: kind === "manual" };
   return raw;
@@ -297,6 +300,28 @@ test("accounts, scoped repositories and automatic CI energy imports", async (t) 
     await db.query("UPDATE ci_import_jobs SET due_at = now() WHERE workflow_run_id = '9005'");
     assert.equal((await request("/api/internal/ci-sync", { headers: { authorization: `Bearer ${cronSecret}` } })).status, 204);
     await statusFor(9005, "imported");
+  });
+
+  await t.test("workload artifact replay, private report, setup download and score", async () => {
+    await capture(privateRepo, 9100, "workload");
+    await saveState();
+    await Promise.all([deliver(privateRepo, 9100),deliver(privateRepo, 9100)]);
+    await statusFor(9100, "imported");
+    assert.equal((await db.query("SELECT count(*) FROM efficiency_reports WHERE repository_id=602")).rows[0].count,"1");
+    const page = await browser.newPage();
+    try {
+      const [name,value] = alice.split("=");
+      await page.context().addCookies([{name,value,url:base}]);
+      await page.goto(base+urlFor(privateRepo));
+      await page.getByText("Project target score",{exact:true}).waitFor();
+      await page.getByText("80 / 100",{exact:true}).first().waitFor();
+      await page.getByText("improved",{exact:true}).waitFor();
+      const download=await page.request.get(base+urlFor(privateRepo)+"/setup/effictiv-workloads.yml");
+      assert.equal(download.status(),200);
+      assert.match(await download.text(), /Effictiv workload efficiency/);
+      const denied=await request(urlFor(privateRepo),{headers:{cookie:bob}});
+      assert.doesNotMatch(await denied.text(),/1500|Project target score/);
+    } finally { await page.close(); }
   });
 
   await t.test("GitHub permission loss, App removal and logout revoke reads", async () => {

@@ -255,3 +255,7 @@ Building the future of Green Software, one commit at a time. 🌍💚
 ## Run Effictiv with GitHub
 
 See the [GitHub CI deployment guide](plan/github-ci-setup.md) to configure accounts, repository import, and automatic CI measurements. The [public measurement pilot](https://effictiv.vercel.app/pilot) shows Effictiv's existing measurements and comparisons.
+
+### Measure a frontend, API or batch workload
+
+Connect a repository to scan its assets and compare two commits against your own workload budgets. See the [workload setup guide](plan/workloads.md) for Next.js and Python examples, score calculations and energy measurement boundaries.
