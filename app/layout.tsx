@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Geist } from "next/font/google";
+import { productGoal } from "@/lib/product";
 import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -9,8 +10,7 @@ const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
   title: "Effictiv | Software Energy Intelligence Platform",
-  description:
-    "Understand, optimize, and reduce the energy consumption, cloud costs, and carbon footprint of your software.",
+  description: productGoal,
   icons: {
     icon: "/favicon.ico",
   },

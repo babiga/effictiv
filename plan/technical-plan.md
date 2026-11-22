@@ -1,5 +1,7 @@
 # Effictiv technical implementation plan
 
+**Product goal.** Help teams, especially those building AI products, reduce the environmental impact of compute-intensive backend workloads. The dashboard pilot tests how to compare energy per completed task before applying that method to backend jobs.
+
 **First release.** A GitHub maintainer can open a pull request, compare the energy used by two commits to complete the same dashboard visit, and trace the result to the underlying runs. Success includes a defensible “inconclusive” verdict. A reduction earns a verified label only when a follow-up experiment demonstrates it.
 
 ## Starting point

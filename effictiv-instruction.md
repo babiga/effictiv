@@ -4,7 +4,7 @@ We are building an open-source project called **Effictiv**.
 
 Effictiv is NOT a cloud cost optimization platform.
 
-Effictiv is a **Software Energy Intelligence Platform** whose mission is to help developers build more energy-efficient, sustainable software and reduce the environmental impact of computing.
+Effictiv is a **Software Energy Intelligence Platform**. Its main goal is to help teams, especially those building AI products, reduce the environmental impact of their compute-intensive backend workloads.
 
 The dashboard should communicate sustainability, software efficiency, environmental impact, and engineering insights—not finance.
 

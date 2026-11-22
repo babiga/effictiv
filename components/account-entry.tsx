@@ -2,6 +2,7 @@ import Link from "next/link";
 import { GitBranchIcon, LeafIcon } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { productGoal } from "@/lib/product";
 
 const errors: Record<string, string> = {
   unavailable: "GitHub sign-in is temporarily unavailable.",
@@ -19,6 +20,7 @@ export function AccountEntry({ register, error }: { register?: boolean; error?: 
           </span>
           <span className="text-xl font-medium">Effictiv</span>
         </div>
+        <p className="text-sm text-muted-foreground">{productGoal}</p>
         <Card>
           <CardHeader>
             <CardTitle><h1 className="text-xl">{register ? "Create an account" : "Sign in to Effictiv"}</h1></CardTitle>

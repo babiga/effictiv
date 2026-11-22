@@ -4,19 +4,17 @@
 
 # ⚡ Effictiv
 
-> **Open-source Software Energy Intelligence Platform for Green Software**
+**Effictiv-ийн гол зорилго бол багуудад, ялангуяа AI бүтээгдэхүүн хөгжүүлдэг багуудад, backend-ийн тооцоолол их шаарддаг ажлуудаа байгальд бага нөлөөтэй болгоход туслах.**
 
-Effictiv is an open-source Software Energy Intelligence Platform that helps engineering teams build energy-efficient software. By measuring energy consumption, analyzing carbon emissions, and providing AI-powered optimization insights, Effictiv enables developers to reduce the environmental impact of their applications while naturally improving infrastructure efficiency and lowering operational costs.
+Effictiv’s main goal is to help teams, especially those building AI products, reduce the environmental impact of their compute-intensive backend workloads.
 
 ---
 
 # 🌍 Why Effictiv?
 
-Modern observability platforms tell us about performance, reliability, and availability—but very few help developers understand the environmental impact of their software.
+A model inference request or a nightly batch job can finish on time and still use more energy than it needs. Comparing the energy used to complete the same work before and after a backend change helps teams see whether that change improved efficiency.
 
-Effictiv aims to fill that gap by making software energy consumption visible, measurable, and actionable.
-
-Whether you're building a small application or operating large-scale cloud infrastructure, Effictiv helps you answer questions like:
+Effictiv is an open-source software energy intelligence platform built around questions like these.
 
 - ⚡ Which services consume the most energy?
 - 🌱 What is our software's carbon footprint?
