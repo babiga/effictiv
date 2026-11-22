@@ -2,6 +2,7 @@ import "server-only";
 
 import { githubJson, GitHubError, installationToken, repositorySchema } from "@/lib/github/client";
 import { database } from "@/lib/measurements/database";
+import { insertReport } from "@/lib/efficiency/store";
 import { insertCiRun } from "@/lib/measurements/ci-store";
 import { fetchCiArtifact, InvalidArtifact, MissingArtifact } from "./artifact";
 import { supportedRun, workflowRunSchema } from "./workflow";
@@ -67,7 +68,8 @@ async function finishJob(job: Job, payload: Awaited<ReturnType<typeof fetchCiArt
       SELECT 1 FROM ci_import_jobs WHERE lease = $1 AND status = 'running' FOR UPDATE
     `, [job.lease]);
     if (active.rowCount && locked.rowCount) {
-      const outcome = await insertCiRun(payload.artifact, payload.source, client);
+      const outcome = payload.kind === "efficiency" ? await insertReport(payload.report, payload.source, client)
+        : await insertCiRun(payload.artifact, payload.source, client);
       const conflict = outcome.status === "conflict";
       await client.query(`
         UPDATE ci_import_jobs SET status = $2, message = $3, updated_at = now(), lease = NULL WHERE lease = $1

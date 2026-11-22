@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { DownloadIcon, GitBranchIcon, RefreshCwIcon } from "lucide-react";
+import { EfficiencyPanel } from "@/components/efficiency-report";
 import { CiMeasurements } from "@/components/ci-measurements";
 import { ProjectShell } from "@/components/project-shell";
 import { Badge } from "@/components/ui/badge";
@@ -36,7 +37,7 @@ export default async function ProjectPage({
   params, searchParams,
 }: {
   params: Promise<{ repositoryId: string }>;
-  searchParams: Promise<{ sync?: string }>;
+  searchParams: Promise<{ sync?: string; report?: string; units?: string; month?: string; workload?: string }>;
 }) {
   const account = await currentAccount();
   if (!account) redirect("/login");
@@ -56,7 +57,7 @@ export default async function ProjectPage({
   }
   if (!project) notFound();
 
-  const [{ sync }, summary, status] = await Promise.all([searchParams, ciSummary(project.id), ciSyncStatus(project.id)]);
+  const [{ sync, report, units, month, workload }, summary, status] = await Promise.all([searchParams, ciSummary(project.id), ciSyncStatus(project.id)]);
   const base = `/dashboard/projects/${project.id}`;
 
   return (
@@ -83,6 +84,8 @@ export default async function ProjectPage({
         <p>{status ? (status.message ?? statusMessages[status.status]) : "Waiting for the first GitHub Actions result."}</p>
         {sync && Object.hasOwn(syncMessages, sync) && <p className="mt-1 text-muted-foreground">{syncMessages[sync]}</p>}
       </section>
+
+      <EfficiencyPanel repositoryId={project.id} name={project.full_name} selected={report} units={units} month={month} workload={workload} />
 
       <section aria-label="All-time CI summary" className="grid gap-3 sm:grid-cols-3">
         <Card>

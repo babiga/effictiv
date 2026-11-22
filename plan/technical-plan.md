@@ -1,6 +1,8 @@
 # Effictiv technical implementation plan
 
-**First release.** A GitHub maintainer can open a pull request, compare the energy used by two commits to complete the same dashboard visit, and trace the result to the underlying runs. Success includes a defensible “inconclusive” verdict. A reduction earns a verified label only when a follow-up experiment demonstrates it.
+**Current implementation.** The [repository workload workflow](workloads.md) covers repository scans, matched page/API/command measurements, budget scores, recommendations and impact projections. The milestones below document the original dashboard pilot.
+
+**First pilot release.** A GitHub maintainer can open a pull request, compare the energy used by two commits to complete the same dashboard visit, and trace the result to the underlying runs. Success includes a defensible “inconclusive” verdict. A reduction earns a verified label only when a follow-up experiment demonstrates it.
 
 ## Starting point
 

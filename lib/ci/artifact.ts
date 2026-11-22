@@ -5,11 +5,12 @@ import { fromBufferPromise } from "yauzl";
 import { z } from "zod";
 import { githubJson, githubRequest, GitHubError, providerId } from "@/lib/github/client";
 import { ecoCiArtifactSchema } from "@/lib/measurements/eco-ci-schema.mjs";
-import { commitSha, workflowRunSchema } from "./workflow";
+import { reportSchema } from "@/collector/model.mjs";
+import { commitSha, efficiencyPath, workflowRunSchema } from "./workflow";
 
-const maxJsonBytes = 256 * 1024;
+const maxJsonBytes = 2 * 1024 * 1024;
 const maxZipBytes = maxJsonBytes + 16 * 1024;
-const jsonName = "effictiv-eco-ci.json";
+
 
 const artifactsSchema = z.object({
   artifacts: z.array(z.object({
@@ -71,7 +72,7 @@ async function downloadZip(path: string, token: string) {
   return readBounded(bodyChunks(response.body), maxZipBytes);
 }
 
-async function parseZip(bytes: Buffer) {
+async function parseZip(bytes: Buffer, jsonName: string) {
   try {
     const zip = await fromBufferPromise(bytes, { lazyEntries: true, strictFileNames: true, autoClose: false });
     try {
@@ -97,7 +98,9 @@ type Run = z.output<typeof workflowRunSchema>;
 
 export async function fetchCiArtifact(token: string, repository: string, repositoryId: string, run: Run) {
   const path = `/repos/${repository}/actions`;
-  const name = `effictiv-eco-ci-${run.id}-${run.run_attempt}`;
+  const efficiency = run.path === efficiencyPath;
+  const prefix = efficiency ? "effictiv-workloads" : "effictiv-eco-ci";
+  const name = `${prefix}-${run.id}-${run.run_attempt}`;
   const candidates: z.output<typeof artifactsSchema>["artifacts"] = [];
   for (let page = 1; ; page++) {
     const { artifacts } = await githubJson(
@@ -119,12 +122,29 @@ export async function fetchCiArtifact(token: string, repository: string, reposit
     throw new InvalidArtifact("The archive does not match GitHub’s SHA-256 digest.");
   }
 
-  const bytes = await parseZip(archive);
+  const bytes = await parseZip(archive, `${prefix}.json`);
   let rawArtifact: string;
   try {
     rawArtifact = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(bytes);
   } catch {
     throw new InvalidArtifact("The collector export is not valid UTF-8.");
+  }
+  const sourceInfo = {
+      artifactUrl: `https://github.com/${repository}/actions/runs/${run.id}/artifacts/${source.id}`,
+      artifactSha256: createHash("sha256").update(bytes).digest("hex"),
+      githubArtifactId: source.id,
+      rawArtifact,
+  };
+  if (efficiency) {
+    let data: unknown;
+    try { data = JSON.parse(rawArtifact); } catch { throw new InvalidArtifact("Invalid efficiency JSON."); }
+    const parsed = reportSchema.safeParse(data);
+    if (!parsed.success || parsed.data.repositoryId !== repositoryId || parsed.data.runId !== run.id
+      || parsed.data.attempt !== run.run_attempt || parsed.data.workflowSha !== run.head_sha
+      || (run.event !== "workflow_dispatch" && parsed.data.commitSha !== run.head_sha)) {
+      throw new InvalidArtifact("Efficiency report does not match the GitHub run.");
+    }
+    return {kind:"efficiency" as const, report:parsed.data, source:sourceInfo};
   }
   const parsed = ecoCiArtifactSchema.safeParse(rawArtifact);
   if (!parsed.success || parsed.data.repositoryId !== repositoryId
@@ -135,13 +155,5 @@ export async function fetchCiArtifact(token: string, repository: string, reposit
     throw new InvalidArtifact("The collector export does not match the verified GitHub run.");
   }
 
-  return {
-    artifact: parsed.data,
-    source: {
-      artifactUrl: `https://github.com/${repository}/actions/runs/${run.id}/artifacts/${source.id}`,
-      artifactSha256: createHash("sha256").update(bytes).digest("hex"),
-      githubArtifactId: source.id,
-      rawArtifact,
-    },
-  };
+  return {kind:"ci" as const, artifact:parsed.data, source:sourceInfo};
 }

@@ -3,16 +3,16 @@ import { join } from "node:path";
 import { githubId } from "@/lib/github/client";
 import { noStore } from "@/lib/github/config";
 import { currentProject } from "@/lib/github/projects";
-import { workflowFile } from "@/lib/ci/workflow";
+import { efficiencyFile, workflowFile } from "@/lib/ci/workflow";
 
 const captureFile = "capture-eco-ci.mjs";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ repositoryId: string; file: string }> }) {
   const { repositoryId, file } = await params;
-  if (!githubId.safeParse(repositoryId).success || ![workflowFile, captureFile].includes(file)
+  if (!githubId.safeParse(repositoryId).success || ![workflowFile, efficiencyFile, captureFile].includes(file)
     || !await currentProject(repositoryId)) return new Response(null, { status: 404, headers: noStore });
-  const path = file === workflowFile
-    ? join(process.cwd(), "lib/ci/setup/effictiv-energy.yml")
+  const path = file === efficiencyFile ? join(process.cwd(), ".github/workflows", efficiencyFile) : file !== captureFile
+    ? join(process.cwd(), "lib/ci/setup", file)
     : join(process.cwd(), "scripts/capture-eco-ci.mjs");
   const contents = await readFile(path, "utf8");
   return new Response(contents, { headers: {

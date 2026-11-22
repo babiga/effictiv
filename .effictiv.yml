@@ -1,0 +1,12 @@
+version: 1
+workloads:
+  - id: registration-page
+    kind: page
+    unit: visit
+    metric: transferBytes
+    budget: 550000
+    setup: npm ci --no-audit --no-fund && npm run build
+    server: exec node node_modules/next/dist/bin/next start --hostname 127.0.0.1 --port 3034
+    url: http://127.0.0.1:3034/register
+    selector: h1
+    expectedText: Create an account
