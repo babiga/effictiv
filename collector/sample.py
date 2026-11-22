@@ -103,7 +103,8 @@ def run_service(s, audit):
         if server.poll() is not None or result["completed"] != s["requests"]:
             raise ValueError("HTTP status, response digest or request count failed.")
         return {"sample": {"completed": result["completed"], "failed": 0, "transferBytes": result["bytes"],
-                "cpuSeconds": max(0, after - before), "elapsedMs": elapsed, "p95Ms": result["p95Ms"],
+                **({"cpuSeconds": after - before} if after > before else {}),
+                "elapsedMs": elapsed, "p95Ms": result["p95Ms"],
                 "peakRssBytes": max(peak, rss)}}
     finally:
         terminate_group(server)
