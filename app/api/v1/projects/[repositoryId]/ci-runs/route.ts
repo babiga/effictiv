@@ -1,3 +1,4 @@
+import { currentProject } from "@/lib/github/projects";
 import { z } from "zod";
 import { listCiRuns } from "@/lib/measurements/ci-store";
 import type { CiRunPage } from "@/lib/measurements/ci-types";
@@ -11,6 +12,7 @@ const querySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(6),
   cursor: z.string().regex(/^[\w-]{1,160}$/).optional(),
   format: z.literal("csv").optional(),
+  scope: z.enum(["pilot", "project"]).optional(),
 });
 
 export async function GET(request: Request, { params }: { params: Promise<{ repositoryId: string }> }) {
@@ -19,7 +21,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ repo
   const query = querySchema.safeParse(Object.fromEntries(new URL(request.url).searchParams));
   if (!query.success) return Response.json({ error: "Invalid CI run filters." }, { status: 400 });
 
-  const { search, limit, cursor, format } = query.data;
+  const { search, limit, cursor, format, scope } = query.data;
   if (format === "csv" && cursor) return Response.json({ error: "Export filters cannot include a page cursor." }, { status: 400 });
   let after;
   if (cursor) {
@@ -31,9 +33,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ repo
   }
 
   try {
-    if (!await publicProjectExists(project.data)) return Response.json({ error: "Project not found." }, { status: 404 });
-    const headers = { "Cache-Control": "no-store" };
-    const rows = await listCiRuns(project.data, search, after, format === "csv" ? undefined : limit + 1);
+    const headers = { "Cache-Control": "private, no-store" };
+    const isPublic = scope !== "project" && await publicProjectExists(project.data);
+    const readScope = scope ?? (isPublic ? "pilot" : "project");
+    const allowed = readScope === "project" ? await currentProject(project.data) : isPublic;
+    if (!allowed) return Response.json({ error: "Project not found." }, { status: 404, headers });
+    const rows = await listCiRuns(project.data, search, after, format === "csv" ? undefined : limit + 1, readScope);
     if (format === "csv") {
       const columns = [
         "CI run ID", "GitHub workflow run ID", "Attempt", "Job", "GitHub job ID", "Commit",

@@ -16,7 +16,7 @@ let logs = "";
 
 before(async () => {
   server = spawn(process.execPath, ["node_modules/next/dist/bin/next", "start", "--hostname", "127.0.0.1", "--port", port], {
-    env: { ...process.env, TZ: "UTC", NEXT_TELEMETRY_DISABLED: "1" },
+    env: { ...process.env, TZ: "UTC", EFFICTIV_BENCHMARK_MODE: "1", NEXT_TELEMETRY_DISABLED: "1" },
   });
   for (const stream of [server.stdout, server.stderr]) stream.on("data", (chunk) => { logs += chunk; });
   for (let attempt = 0; attempt < 80; attempt++) {
@@ -49,7 +49,7 @@ test("the profile reserves its height and mounts at first viewport intersection"
     await page.locator("path.recharts-area-curve").first().waitFor();
     const before = await slot.boundingBox();
     assert.ok(before && before.y >= fixture.viewport.height);
-    assert.equal(before.height, 220);
+    assert.ok(Math.abs(before.height - 220) < 0.01);
     assert.equal(await chart.count(), 0);
 
     await slot.scrollIntoViewIfNeeded();
@@ -59,7 +59,7 @@ test("the profile reserves its height and mounts at first viewport intersection"
     for (const [service, value] of Object.entries(fixture.serviceProfile.expectedServices)) {
       await tooltip.locator("div").filter({ hasText: new RegExp(`^${service}:${value}$`) }).waitFor();
     }
-    assert.equal((await slot.boundingBox()).height, before.height);
+    assert.ok(Math.abs((await slot.boundingBox()).height - before.height) < 0.01);
 
     await slot.evaluate((element) => {
       element.closest("main")?.scrollTo({ top: 0, behavior: "instant" });

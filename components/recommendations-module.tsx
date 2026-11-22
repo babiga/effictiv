@@ -17,12 +17,14 @@ import { mockRecommendations, Recommendation } from "@/lib/mockData";
 import { toast } from "sonner";
 
 interface RecommendationsModuleProps {
+  demoOnly?: boolean;
   dismissedIds: string[];
   onDismiss: (id: string) => void;
 }
 
 export function RecommendationsModule(props: RecommendationsModuleProps) {
   const [mode, setMode] = React.useState<"live" | "demo">("live");
+  if (props.demoOnly) return <DemoRecommendations {...props} />;
 
   return (
     <div className="flex flex-col gap-4 p-4 lg:p-6">

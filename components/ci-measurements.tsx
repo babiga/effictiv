@@ -10,17 +10,26 @@ import { useMeasurementsPage } from "@/hooks/use-measurements-page";
 import type { CiRunPage, CiRunSummary } from "@/lib/measurements/ci-types";
 import { pilotRepositoryId, pilotRepositoryName } from "@/lib/measurements/pilot.mjs";
 
-const endpoint = `/api/v1/projects/${pilotRepositoryId}/ci-runs`;
 const energyFormat = new Intl.NumberFormat(undefined, { maximumSignificantDigits: 6 });
 const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" });
 const outcomeLabels = { success: "Passed", failure: "Failed", skipped: "Skipped" };
 
-export function CiMeasurements() {
+export function CiMeasurements({
+  repositoryId = pilotRepositoryId,
+  repositoryName = pilotRepositoryName,
+  scope = "pilot",
+}: {
+  repositoryId?: string;
+  repositoryName?: string;
+  scope?: "project" | "pilot";
+}) {
+  const endpoint = `/api/v1/projects/${repositoryId}/ci-runs`;
   const [search, setSearch] = useState("");
   const [cursors, setCursors] = useState<string[]>([]);
   const prefix = search.trim();
   const validSearch = /^[a-f0-9]{0,40}$/i.test(prefix);
   const filters = new URLSearchParams(prefix ? { search: prefix } : {});
+  if (scope === "project") filters.set("scope", scope);
   const exportParams = new URLSearchParams(filters);
   exportParams.set("format", "csv");
   const cursor = cursors.at(-1);
@@ -32,7 +41,7 @@ export function CiMeasurements() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-xl tracking-tight">CI builds</h2>
-          <p className="text-sm text-muted-foreground">{pilotRepositoryName}</p>
+          <p className="text-sm text-muted-foreground">{repositoryName}</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" disabled={!validSearch} onClick={refresh}><RefreshCwIcon /> Refresh</Button>
@@ -70,7 +79,7 @@ export function CiMeasurements() {
                       <th key={name} scope="col" className="p-2 font-medium">{name}</th>
                     ))}</tr>
                   </thead>
-                  <tbody>{page.runs.map((run) => <CiRunRow key={run.id} run={run} />)}</tbody>
+                  <tbody>{page.runs.map((run) => <CiRunRow key={run.id} run={run} repositoryName={repositoryName} endpoint={endpoint} />)}</tbody>
                 </table>
               </div>
             )}
@@ -90,8 +99,9 @@ export function CiMeasurements() {
   );
 }
 
-function CiRunRow({ run }: { run: CiRunSummary }) {
-  const runUrl = `https://github.com/${pilotRepositoryName}/actions/runs/${run.runId}/attempts/${run.attempt}`;
+function CiRunRow({ run, repositoryName, endpoint }: { run: CiRunSummary; repositoryName: string; endpoint: string }) {
+  const runUrl = `https://github.com/${repositoryName}/actions/runs/${run.runId}/attempts/${run.attempt}`;
+  const artifactUrl = run.hasStoredArtifact ? `${endpoint}/${run.id}/artifact` : run.artifactUrl;
   return (
     <tr className="border-b align-top last:border-b-0">
       <th scope="row" className="min-w-32 p-2 font-medium">
@@ -125,7 +135,7 @@ function CiRunRow({ run }: { run: CiRunSummary }) {
         </details>
       </td>
       <td className="whitespace-nowrap p-2">
-        <a className="block underline underline-offset-2" href={run.artifactUrl} title={`SHA-256 ${run.artifactSha256}`} target="_blank" rel="noreferrer">Collector artifact</a>
+        <a className="block underline underline-offset-2" href={artifactUrl} title={`SHA-256 ${run.artifactSha256}`} target="_blank" rel="noreferrer">Collector artifact</a>
         <a className="underline underline-offset-2" href={runUrl} target="_blank" rel="noreferrer">GitHub run</a>
       </td>
     </tr>

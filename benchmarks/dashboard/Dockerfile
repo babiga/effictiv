@@ -10,4 +10,6 @@ RUN npm ci \
     && NEXT_PUBLIC_EFFICTIV_BENCHMARK_DATE="$(node -p 'require("./benchmarks/dashboard/fixture.json").date')" npm run build \
     && npm cache clean --force
 
+ENV EFFICTIV_BENCHMARK_MODE=1
+
 CMD ["node", "node_modules/next/dist/bin/next", "start", "--hostname", "127.0.0.1"]

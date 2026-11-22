@@ -15,7 +15,7 @@ export default async function ComparisonPage({ params }: { params: Promise<{ com
 
   return (
     <main className="mx-auto w-full max-w-5xl space-y-4 p-4 lg:p-6">
-      <Link href="/dashboard" className="text-sm text-muted-foreground underline underline-offset-4">Back to dashboard</Link>
+      <Link href="/pilot" className="text-sm text-muted-foreground underline underline-offset-4">Back to public pilot</Link>
       <h1 className="text-xl tracking-tight">Dashboard benchmark comparison</h1>
       <BenchmarkEvidence comparison={comparison} />
     </main>

@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { ecoCiArtifactSchema, ecoCiUploadSchema } from "../lib/measurements/eco-ci-schema.mjs";
-import { pilotRepositoryId } from "../lib/measurements/pilot.mjs";
+import { pilotRepositoryId, pilotRepositoryName } from "../lib/measurements/pilot.mjs";
 
 async function main() {
   const [filename, artifactUrl] = process.argv.slice(2);
@@ -16,7 +16,10 @@ async function main() {
 
   const bytes = await readFile(filename);
   const artifact = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(bytes);
-  ecoCiArtifactSchema.parse(artifact);
+  const parsed = ecoCiArtifactSchema.parse(artifact);
+  if (parsed.repositoryId !== pilotRepositoryId || parsed.repository !== pilotRepositoryName) {
+    throw new Error("This command only imports CI artifacts for the pilot repository");
+  }
   const upload = ecoCiUploadSchema.parse({
     repositoryId: pilotRepositoryId, artifactUrl, artifact, artifactSha256: createHash("sha256").update(bytes).digest("hex"),
   });

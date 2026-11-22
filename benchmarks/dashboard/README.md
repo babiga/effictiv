@@ -1,6 +1,6 @@
 # Dashboard benchmark v1
 
-The functional unit is one completed visit to the production `/dashboard`. Run each path in its own Green Metrics Tool (GMT) run.
+The functional unit is one completed visit to `/dashboard` in an isolated benchmark build. Run each path in its own Green Metrics Tool (GMT) run.
 
 | Path | Success assertion |
 | --- | --- |
@@ -42,7 +42,7 @@ npm ci --prefix benchmarks/dashboard
 benchmarks/dashboard/node_modules/.bin/playwright-core install chromium --only-shell
 export TZ=UTC NEXT_TELEMETRY_DISABLED=1
 NEXT_PUBLIC_EFFICTIV_BENCHMARK_DATE="$(node -p 'require("./benchmarks/dashboard/fixture.json").date')" npm run build
-npm run start -- --hostname 127.0.0.1 --port 3000
+EFFICTIV_BENCHMARK_MODE=1 npm run start -- --hostname 127.0.0.1 --port 3000
 ```
 
 In a second shell at the repository root, run the two browser checks.
