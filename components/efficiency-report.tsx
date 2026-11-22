@@ -88,6 +88,13 @@ function WorkloadCard({ w, volume, period }: { w: Workload; volume: number; peri
             <code className="break-all">{a.path}</code>
             <p>{a.detail}</p>
             {a.potentialBytes > 0 && <p>Lighthouse estimate · {number(a.potentialBytes)} B</p>}
+            {t.kind === "page" && a.status === "suggested" && (
+              <a className="underline" href={a.potentialBytes > 0
+                ? "https://patterns.greensoftware.foundation/development/media-and-code-efficiency/serve-images-in-modern-formats/"
+                : "https://patterns.greensoftware.foundation/development/media-and-code-efficiency/properly-sized-images/"}>
+                {a.potentialBytes > 0 ? "Compare image formats" : "Choose the right image dimensions"} · Green Software Patterns
+              </a>
+            )}
           </div>
         ))}
         <details>
