@@ -3,6 +3,8 @@
 # dependencies
 /node_modules
 /benchmarks/dashboard/node_modules/
+/collector/node_modules/
+**/__pycache__/
 /.pnp
 .pnp.*
 .yarn/*
